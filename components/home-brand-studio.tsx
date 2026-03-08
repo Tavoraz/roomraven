@@ -3,6 +3,8 @@
 import type { ChangeEvent, CSSProperties } from "react";
 import { useState } from "react";
 
+import { buildPublicDemoHref, getDefaultDemoVariant } from "@/lib/demo-variants";
+
 interface HomeBrandStudioProps {
   initialBrandName: string;
   initialPrimaryColor: string;
@@ -25,6 +27,7 @@ export function HomeBrandStudio({
   initialPrimaryColor,
   initialSecondaryColor
 }: HomeBrandStudioProps) {
+  const demoHref = `${buildPublicDemoHref(getDefaultDemoVariant())}&previewBrand=1`;
   const [brandName, setBrandName] = useState(initialBrandName);
   const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
   const [secondaryColor, setSecondaryColor] = useState(initialSecondaryColor);
@@ -59,6 +62,23 @@ export function HomeBrandStudio({
     } finally {
       event.target.value = "";
     }
+  }
+
+  function handleShowDemo() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      "roomraven:brand-preview",
+      JSON.stringify({
+        name: normalizedBrandName,
+        primaryColor,
+        secondaryColor,
+        logoDataUrl
+      })
+    );
+    window.location.assign(demoHref);
   }
 
   return (
@@ -149,7 +169,9 @@ export function HomeBrandStudio({
               <span className="home-brand-preview-kicker">Your branded experience</span>
               <h3>Let shoppers see the result in your own look and feel.</h3>
               <p>Logo, colors, and call-to-action styling update live so clients can picture RoomRaven on your site.</p>
-              <span className="home-brand-preview-cta">Start designing</span>
+              <button className="home-brand-preview-cta" type="button" onClick={handleShowDemo}>
+                Show demo
+              </button>
             </div>
 
             <div className="home-brand-preview-showcase">

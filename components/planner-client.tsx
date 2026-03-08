@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { RoomRavenBadge } from "@/components/roomraven-badge";
 import { chooseWinner, startWinnerStaysTournament } from "@/lib/compare";
@@ -25,6 +26,13 @@ type GeneratedConcept = {
 
 type VisualizationResponse = {
   concept: GeneratedConcept;
+};
+
+type BrandPreview = {
+  name: string;
+  primaryColor: string;
+  secondaryColor: string;
+  logoDataUrl: string | null;
 };
 
 interface PlannerClientProps {
@@ -175,6 +183,31 @@ function loadImage(src: string) {
   });
 }
 
+function getInitials(label: string) {
+  const initials = label
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "RR";
+}
+
+function createPreviewTenant(tenant: Tenant, preview: BrandPreview): Tenant {
+  return {
+    ...tenant,
+    name: preview.name,
+    brandTheme: {
+      ...tenant.brandTheme,
+      logoDataUrl: preview.logoDataUrl,
+      primaryColor: preview.primaryColor,
+      secondaryColor: preview.secondaryColor,
+      accentColor: preview.primaryColor
+    }
+  };
+}
+
 async function normalizeImage(file: File): Promise<UploadedImage> {
   const dataUrl = await fileToDataUrl(file);
 
@@ -241,8 +274,10 @@ function localizedRoomLabel(locale: Locale, roomType: RoomType) {
 }
 
 export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }: PlannerClientProps) {
+  const searchParams = useSearchParams();
   const [locale, setLocale] = useState<Locale>(initialLocale);
   const [roomType, setRoomType] = useState<RoomType>(initialRoomType);
+  const [brandPreview, setBrandPreview] = useState<BrandPreview | null>(null);
   const [currentRoomImage, setCurrentRoomImage] = useState<UploadedImage | null>(null);
   const [inspirationImages, setInspirationImages] = useState<UploadedImage[]>([]);
   const [latestConcept, setLatestConcept] = useState<GeneratedConcept | null>(null);
@@ -261,6 +296,7 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
     () => roomLibrary.filter((concept) => selectedConceptIds.includes(concept.id)).map((concept) => concept.id),
     [roomLibrary, selectedConceptIds]
   );
+  const displayTenant = brandPreview ? createPreviewTenant(tenant, brandPreview) : tenant;
   const selectedCount = orderedSelection.length;
   const compareChampion = compareState ? roomLibraryMap.get(compareState.championId) ?? null : null;
   const compareChallenger = compareState?.challengerId ? roomLibraryMap.get(compareState.challengerId) ?? null : null;
@@ -272,6 +308,42 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
     { index: 3, label: locale === "nl" ? "Bibliotheek" : "Library" },
     { index: 4, label: locale === "nl" ? "Vergelijk" : "Compare" }
   ];
+
+  useEffect(() => {
+    if (searchParams.get("previewBrand") !== "1") {
+      setBrandPreview(null);
+      return;
+    }
+
+    const raw = window.sessionStorage.getItem("roomraven:brand-preview");
+
+    if (!raw) {
+      setBrandPreview(null);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<BrandPreview>;
+
+      if (
+        typeof parsed.name === "string" &&
+        typeof parsed.primaryColor === "string" &&
+        typeof parsed.secondaryColor === "string" &&
+        (typeof parsed.logoDataUrl === "string" || parsed.logoDataUrl === null)
+      ) {
+        setBrandPreview({
+          name: parsed.name,
+          primaryColor: parsed.primaryColor,
+          secondaryColor: parsed.secondaryColor,
+          logoDataUrl: parsed.logoDataUrl
+        });
+      } else {
+        setBrandPreview(null);
+      }
+    } catch {
+      setBrandPreview(null);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined" || window.parent === window) {
@@ -520,14 +592,25 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
 
   return (
     <div className="page-shell">
-      <div className="planner-shell" data-embed={embed} style={themeVars(tenant)}>
+      <div className="planner-shell" data-embed={embed} style={themeVars(displayTenant)}>
         <div className="two-column">
           <div className="stack">
-            <RoomRavenBadge compact />
+            {brandPreview ? (
+              <div className="planner-preview-brand">
+                {brandPreview.logoDataUrl ? (
+                  <img className="planner-preview-brand-logo" src={brandPreview.logoDataUrl} alt={`${brandPreview.name} logo`} />
+                ) : (
+                  <span className="planner-preview-brand-fallback">{getInitials(brandPreview.name)}</span>
+                )}
+                <span className="planner-preview-brand-name">{brandPreview.name}</span>
+              </div>
+            ) : (
+              <RoomRavenBadge compact />
+            )}
             <h1 className="section-title">{text.title}</h1>
             <p className="lead">{text.intro}</p>
             <div className="chip-row">
-              {tenant.supportedLocales.map((supportedLocale) => (
+              {displayTenant.supportedLocales.map((supportedLocale) => (
                 <button
                   key={supportedLocale}
                   type="button"

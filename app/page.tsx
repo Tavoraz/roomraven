@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { HomeBrandStudio } from "@/components/home-brand-studio";
@@ -9,17 +10,69 @@ import { buildPublicDemoHref, getDefaultDemoVariant } from "@/lib/demo-variants"
 export const dynamic = "force-dynamic";
 
 const roomTypes = [
-  { label: "Bathroom", kind: "bathroom" },
-  { label: "Kitchen", kind: "kitchen" },
-  { label: "Living room", kind: "living-room" },
-  { label: "Office", kind: "office" }
+  {
+    label: "Bathroom",
+    image: "/home/Bathroom.png",
+    alt: "Soft neutral bathroom concept with a freestanding tub and light wood finishes"
+  },
+  {
+    label: "Kitchen",
+    image: "/home/Kitchen.png",
+    alt: "Warm minimalist kitchen concept with rounded island edges and white cabinetry"
+  },
+  {
+    label: "Living room",
+    image: "/home/LivingRoom.png",
+    alt: "Calm living room concept with a soft sofa, rounded table, and warm accents"
+  },
+  {
+    label: "Office",
+    image: "/home/Office.png",
+    alt: "Minimal home office concept with a desk setup in a soft neutral palette"
+  }
 ] as const;
 const audienceGroups = ["Bathroom retailers", "Kitchen studios", "Interior showrooms", "Renovation specialists"];
 const flowTiles = [
-  { step: "01", label: "Upload", meta: "Current room", detail: "Photo of the existing space", icon: "camera", visual: "upload" },
-  { step: "02", label: "Reference", meta: "Products + finishes", detail: "Objects, finishes, colors", icon: "swatches", visual: "reference" },
-  { step: "03", label: "Keep", meta: "Best concepts", detail: "Save strong AI options", icon: "sparkles", visual: "keep" },
-  { step: "04", label: "1v1", meta: "Winner stays", detail: "Compare until one wins", icon: "trophy", visual: "compare" }
+  {
+    step: "01",
+    label: "Upload",
+    meta: "Current room",
+    detail: "Photo of the existing space",
+    icon: "camera",
+    visual: "upload",
+    image: "/home/Upload.png",
+    alt: "A room photo framed as an upload preview inside a mobile camera interface"
+  },
+  {
+    step: "02",
+    label: "Reference",
+    meta: "Products + finishes",
+    detail: "Objects, finishes, colors",
+    icon: "swatches",
+    visual: "reference",
+    image: "/home/Reference.png",
+    alt: "A reference board with tiles, finishes, fixtures, and furniture choices"
+  },
+  {
+    step: "03",
+    label: "Keep",
+    meta: "Best concepts",
+    detail: "Save strong AI options",
+    icon: "sparkles",
+    visual: "keep",
+    image: "/home/GeneratedConcept.png",
+    alt: "A generated room concept showing the selected direction brought to life"
+  },
+  {
+    step: "04",
+    label: "1v1",
+    meta: "Winner stays",
+    detail: "Compare until one wins",
+    icon: "trophy",
+    visual: "compare",
+    image: "/home/LivingRoom.png",
+    alt: "Two saved concepts ready for a winner-stays comparison"
+  }
 ];
 const valueTiles = [
   { label: "Clients see the result", meta: "Easier to picture the outcome", icon: "eye" },
@@ -57,9 +110,12 @@ export default function HomePage() {
             <div className="home-room-example-grid">
               {roomTypes.map((roomType) => (
                 <article key={roomType.label} className="home-room-example-card">
-                  <div className={`home-room-example-visual home-room-example-${roomType.kind}`} aria-hidden="true">
-                    <RoomExampleVisual kind={roomType.kind} />
-                  </div>
+                  <HomeVisualFrame
+                    className="home-room-example-visual"
+                    src={roomType.image}
+                    alt={roomType.alt}
+                    sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 18vw"
+                  />
                   <span className="home-room-example-label">{roomType.label}</span>
                 </article>
               ))}
@@ -78,39 +134,47 @@ export default function HomePage() {
         <aside className="panel hero-visual home-visual-stage">
           <article className="home-scene-card home-scene-current">
             <span className="home-scene-kicker">Current room</span>
-            <div className="home-room-scene home-room-scene-current">
-              <div className="scene-wall" />
-              <div className="scene-floor" />
-              <div className="scene-object scene-vanity" />
-              <div className="scene-object scene-window" />
-              <div className="scene-object scene-bath" />
-            </div>
+            <HomeVisualFrame
+              className="home-scene-media"
+              src="/home/CurrentRoom.png"
+              alt="Current room photo showing an empty soft-neutral space before redesign"
+              sizes="(max-width: 960px) 100vw, 32vw"
+              priority
+            />
           </article>
 
           <article className="home-scene-card home-scene-inspiration">
             <span className="home-scene-kicker">Inspiration</span>
-            <InspirationBoard />
+            <HomeVisualFrame
+              className="home-scene-media"
+              src="/home/Inspiration.png"
+              alt="Inspiration board with tiles, wood samples, fittings, and material references"
+              sizes="(max-width: 960px) 100vw, 26vw"
+              priority
+            />
           </article>
 
           <article className="home-scene-card home-scene-generated">
             <span className="home-scene-kicker">Generated concept</span>
-            <div className="home-room-scene home-room-scene-generated">
-              <div className="scene-wall" />
-              <div className="scene-floor" />
-              <div className="scene-object scene-vanity scene-vanity-upgraded" />
-              <div className="scene-object scene-window scene-window-glow" />
-              <div className="scene-object scene-bath scene-bath-upgraded" />
-              <div className="scene-object scene-plant" />
-            </div>
+            <HomeVisualFrame
+              className="home-scene-media"
+              src="/home/GeneratedConcept.png"
+              alt="Generated concept showing a completed living room in soft natural tones"
+              sizes="(max-width: 960px) 100vw, 32vw"
+              priority
+            />
           </article>
 
           <article className="home-scene-card home-scene-compare">
             <span className="home-scene-kicker">1v1 compare</span>
-            <div className="home-compare-stage">
-              <div className="home-compare-option home-compare-option-a" />
-              <div className="home-compare-vs">VS</div>
-              <div className="home-compare-option home-compare-option-b" />
-            </div>
+            <HomeComparePreview
+              leftSrc="/home/GeneratedConcept.png"
+              leftAlt="Generated concept option A"
+              rightSrc="/home/LivingRoom.png"
+              rightAlt="Generated concept option B"
+              sizes="(max-width: 960px) 100vw, 24vw"
+              priority
+            />
           </article>
         </aside>
       </section>
@@ -153,7 +217,23 @@ export default function HomePage() {
                 <span className="home-card-icon home-card-icon-strong" aria-hidden="true">
                   <HomeGlyph kind={tile.icon} />
                 </span>
-                <FlowVisual kind={tile.visual} />
+                {tile.visual === "compare" ? (
+                  <HomeComparePreview
+                    compact
+                    leftSrc="/home/GeneratedConcept.png"
+                    leftAlt="Comparison option A"
+                    rightSrc="/home/LivingRoom.png"
+                    rightAlt="Comparison option B"
+                    sizes="(max-width: 960px) 100vw, 18vw"
+                  />
+                ) : (
+                  <HomeVisualFrame
+                    className="home-flow-image"
+                    src={tile.image}
+                    alt={tile.alt}
+                    sizes="(max-width: 960px) 100vw, 18vw"
+                  />
+                )}
               </div>
               <span className="home-flow-step">{tile.step}</span>
               <h3>{tile.label}</h3>
@@ -289,164 +369,48 @@ function HomeGlyph({ kind }: { kind: string }) {
   }
 }
 
-function FlowVisual({ kind }: { kind: string }) {
-  switch (kind) {
-    case "upload":
-      return (
-        <div className="flow-visual-upload" aria-hidden="true">
-          <div className="flow-upload-frame">
-            <div className="flow-upload-wall" />
-            <div className="flow-upload-floor" />
-            <div className="flow-upload-vanity" />
-            <div className="flow-upload-window" />
-          </div>
-          <div className="flow-upload-corners" />
-        </div>
-      );
-    case "reference":
-      return <ReferenceBoard />;
-    case "keep":
-      return (
-        <div className="flow-visual-keep" aria-hidden="true">
-          <div className="flow-keep-card flow-keep-card-a" />
-          <div className="flow-keep-card flow-keep-card-b" />
-          <div className="flow-keep-card flow-keep-card-selected">
-            <div className="flow-keep-badge">Keep</div>
-          </div>
-        </div>
-      );
-    case "compare":
-      return (
-        <div className="flow-visual-compare" aria-hidden="true">
-          <div className="flow-compare-card flow-compare-card-a" />
-          <div className="flow-compare-versus">VS</div>
-          <div className="flow-compare-card flow-compare-card-b" />
-        </div>
-      );
-    default:
-      return null;
-  }
-}
-
-function InspirationBoard() {
+function HomeVisualFrame({
+  src,
+  alt,
+  className,
+  sizes,
+  priority = false
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  sizes: string;
+  priority?: boolean;
+}) {
   return (
-    <div className="home-inspiration-board" aria-hidden="true">
-      <div className="home-inspiration-card home-inspiration-card-tiles">
-        <div className="inspiration-card-label">Tiles</div>
-        <div className="inspiration-tile-grid" />
-        <div className="inspiration-tile-chip-row">
-          <span className="inspiration-finish-chip inspiration-finish-chip-stone" />
-          <span className="inspiration-finish-chip inspiration-finish-chip-oak" />
-          <span className="inspiration-finish-chip inspiration-finish-chip-brass" />
-        </div>
-        <div className="inspiration-tile-ring" />
-      </div>
-
-      <div className="home-inspiration-card home-inspiration-card-fixtures">
-        <div className="inspiration-card-label">Fixtures</div>
-        <div className="inspiration-faucet-neck" />
-        <div className="inspiration-faucet-spout" />
-        <div className="inspiration-faucet-base" />
-        <div className="inspiration-shower-rail" />
-        <div className="inspiration-shower-head" />
-      </div>
-
-      <div className="home-inspiration-card home-inspiration-card-vanity">
-        <div className="inspiration-card-label">Vanity + finish</div>
-        <div className="inspiration-vanity-mirror" />
-        <div className="inspiration-vanity-shelf" />
-        <div className="inspiration-vanity-basin" />
-        <div className="inspiration-folded-towel" />
-        <div className="inspiration-finish-chip-row">
-          <span className="inspiration-finish-chip inspiration-finish-chip-stone" />
-          <span className="inspiration-finish-chip inspiration-finish-chip-oak" />
-          <span className="inspiration-finish-chip inspiration-finish-chip-brass" />
-        </div>
-      </div>
+    <div className={["home-visual-frame", className].filter(Boolean).join(" ")}>
+      <Image src={src} alt={alt} fill sizes={sizes} className="home-visual-image" priority={priority} />
     </div>
   );
 }
 
-function ReferenceBoard() {
+function HomeComparePreview({
+  leftSrc,
+  leftAlt,
+  rightSrc,
+  rightAlt,
+  sizes,
+  priority = false,
+  compact = false
+}: {
+  leftSrc: string;
+  leftAlt: string;
+  rightSrc: string;
+  rightAlt: string;
+  sizes: string;
+  priority?: boolean;
+  compact?: boolean;
+}) {
   return (
-    <div className="flow-visual-reference" aria-hidden="true">
-      <div className="flow-reference-board">
-        <div className="flow-reference-hero">
-          <div className="flow-reference-hero-label">Reference board</div>
-          <div className="flow-reference-hero-tiles" />
-          <div className="flow-reference-hero-slab" />
-          <div className="flow-reference-hero-ring" />
-          <div className="flow-reference-chip-row">
-            <span className="flow-reference-chip flow-reference-chip-stone" />
-            <span className="flow-reference-chip flow-reference-chip-oak" />
-            <span className="flow-reference-chip flow-reference-chip-brass" />
-          </div>
-        </div>
-
-        <div className="flow-reference-side">
-          <div className="flow-reference-mini flow-reference-mini-faucet">
-            <div className="flow-reference-mini-label">Fixture</div>
-            <div className="flow-reference-faucet-neck" />
-            <div className="flow-reference-faucet-spout" />
-            <div className="flow-reference-faucet-base" />
-            <div className="flow-reference-shower-rail" />
-            <div className="flow-reference-shower-head" />
-          </div>
-
-          <div className="flow-reference-mini flow-reference-mini-vanity">
-            <div className="flow-reference-mini-label">Object</div>
-            <div className="flow-reference-mirror" />
-            <div className="flow-reference-vanity" />
-            <div className="flow-reference-towel" />
-          </div>
-        </div>
-      </div>
+    <div className={`home-compare-stage${compact ? " home-compare-stage-compact" : ""}`}>
+      <HomeVisualFrame className="home-compare-option" src={leftSrc} alt={leftAlt} sizes={sizes} priority={priority} />
+      <div className="home-compare-vs">VS</div>
+      <HomeVisualFrame className="home-compare-option" src={rightSrc} alt={rightAlt} sizes={sizes} priority={priority} />
     </div>
   );
-}
-
-function RoomExampleVisual({ kind }: { kind: string }) {
-  switch (kind) {
-    case "bathroom":
-      return (
-        <>
-          <div className="room-example-wall" />
-          <div className="room-example-floor" />
-          <div className="room-example-bath" />
-          <div className="room-example-vanity" />
-        </>
-      );
-    case "kitchen":
-      return (
-        <>
-          <div className="room-example-wall" />
-          <div className="room-example-floor" />
-          <div className="room-example-counter" />
-          <div className="room-example-cabinet" />
-          <div className="room-example-hob" />
-        </>
-      );
-    case "living-room":
-      return (
-        <>
-          <div className="room-example-wall" />
-          <div className="room-example-floor" />
-          <div className="room-example-sofa" />
-          <div className="room-example-table" />
-          <div className="room-example-lamp" />
-        </>
-      );
-    case "office":
-      return (
-        <>
-          <div className="room-example-wall" />
-          <div className="room-example-floor" />
-          <div className="room-example-desk" />
-          <div className="room-example-screen" />
-          <div className="room-example-chair" />
-        </>
-      );
-    default:
-      return null;
-  }
 }
