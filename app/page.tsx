@@ -4,8 +4,7 @@ import { HomeBrandStudio } from "@/components/home-brand-studio";
 import { HomeRotatingValue } from "@/components/home-rotating-value";
 import { RoomRavenBadge } from "@/components/roomraven-badge";
 import { ScrollCta } from "@/components/scroll-cta";
-import { buildPublicDemoHref, getDefaultDemoVariant, listPublicDemoCards } from "@/lib/demo-variants";
-import { listTenants } from "@/lib/repository";
+import { buildPublicDemoHref, getDefaultDemoVariant } from "@/lib/demo-variants";
 
 export const dynamic = "force-dynamic";
 
@@ -33,16 +32,14 @@ const propositionTiles = [
   { label: "Matched to your branding", meta: "Logo, colors, and styling tailored to your brand", icon: "palette" }
 ];
 const heroValueMessages = [
-  "Help shoppers decide faster with visual room previews.",
-  "Turn inspiration into higher-intent leads and purchases.",
-  "Keep renovation planning on your own branded website.",
-  "Show the result before the sale, not after it."
+  "turn inspiration into higher-intent conversions.",
+  "shorten the path from idea to purchase.",
+  "keep shoppers planning on your own website.",
+  "make renovation decisions feel easier and safer."
 ];
 
 export default function HomePage() {
-  const tenants = listTenants();
-  const demos = listPublicDemoCards(tenants);
-  const primaryDemo = demos[0] ?? { href: buildPublicDemoHref(getDefaultDemoVariant()) };
+  const primaryDemoHref = buildPublicDemoHref(getDefaultDemoVariant());
 
   return (
     <main className="page-shell">
@@ -69,7 +66,7 @@ export default function HomePage() {
             </div>
           </div>
           <div id="home-actions" className="cta-row raven-target">
-            <Link className="cta cta-primary" href={primaryDemo.href}>
+            <Link className="cta cta-primary" href={primaryDemoHref}>
               Try the demo
             </Link>
             <ScrollCta className="cta cta-secondary" target="#brand-demos">
@@ -187,31 +184,9 @@ export default function HomePage() {
 
         <HomeBrandStudio
           initialBrandName="Your brand"
-          initialPrimaryColor={demos[0]?.tenant.brandTheme.primaryColor ?? "#d97706"}
-          initialSecondaryColor={demos[0]?.tenant.brandTheme.secondaryColor ?? "#0f172a"}
+          initialPrimaryColor="#d97706"
+          initialSecondaryColor="#0f172a"
         />
-
-        <div className="home-brand-grid">
-          {demos.map((demo) => {
-            return (
-              <Link
-                key={demo.slug}
-                className="feature-card home-brand-card"
-                href={demo.href}
-              >
-                <div
-                  className="home-brand-swatch"
-                  style={{
-                    background: `linear-gradient(135deg, ${demo.tenant.brandTheme.primaryColor}, ${demo.tenant.brandTheme.secondaryColor})`
-                  }}
-                />
-                <span className="home-brand-name">{demo.label}</span>
-                <span className="small-note">{demo.note}</span>
-                <span className="chip">Open demo</span>
-              </Link>
-            );
-          })}
-        </div>
       </section>
     </main>
   );

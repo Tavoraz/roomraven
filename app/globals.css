@@ -476,14 +476,39 @@ button {
 .home-hero-subtext {
   margin: 0;
   max-width: 34rem;
-  min-height: 3.5rem;
-  display: flex;
-  align-items: flex-start;
+  min-height: 5.2rem;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.home-hero-rotator-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tenant-primary) 10%, white);
+  border: 1px solid color-mix(in srgb, var(--tenant-primary) 18%, rgba(15, 23, 42, 0.08));
+  color: color-mix(in srgb, var(--tenant-primary) 78%, #0f172a);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.home-hero-rotator-line {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  line-height: 1.35;
+  color: var(--tenant-secondary);
 }
 
 .home-hero-rotator-text {
   display: inline-block;
-  color: color-mix(in srgb, var(--tenant-secondary) 78%, var(--muted));
+  color: color-mix(in srgb, var(--tenant-secondary) 92%, #0f172a);
+  font-weight: 700;
   animation: home-hero-rotator-in 260ms ease;
 }
 
@@ -2671,33 +2696,23 @@ button {
 
 .raven-guide {
   position: fixed;
-  top: 0;
-  left: 0;
+  right: 20px;
+  bottom: 20px;
   z-index: 90;
-  pointer-events: none;
-  transition: transform 0.72s cubic-bezier(0.24, 1, 0.36, 1);
-}
-
-.raven-perch-controls {
-  position: relative;
   pointer-events: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
 }
 
 .raven-toggle {
   position: relative;
-  width: 96px;
-  height: 96px;
+  width: 78px;
+  height: 78px;
   border: 0;
   border-radius: 999px;
   background:
     radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.08) 34%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(226, 232, 240, 0.72));
   box-shadow:
-    0 18px 42px rgba(15, 23, 42, 0.18),
+    0 16px 36px rgba(15, 23, 42, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(14px);
 }
@@ -2736,7 +2751,7 @@ button {
 }
 
 .raven-toggle:hover .raven-sprite {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-1px) scale(1.01);
 }
 
 .raven-shadow {
@@ -2749,11 +2764,11 @@ button {
 
 .raven-sprite {
   position: absolute;
-  inset: 6px;
-  width: 84px;
-  height: 84px;
+  inset: 5px;
+  width: 68px;
+  height: 68px;
   transform: translateY(0);
-  animation: raven-hover 4.8s ease-in-out infinite;
+  animation: raven-hover 6.5s ease-in-out infinite;
   transition: transform 180ms ease;
 }
 
@@ -2763,12 +2778,12 @@ button {
 }
 
 .raven-wing-left {
-  animation: raven-flap-left 1.8s ease-in-out infinite alternate;
+  animation: raven-flap-left 2.8s ease-in-out infinite alternate;
   transform-origin: 88% 58%;
 }
 
 .raven-wing-right {
-  animation: raven-flap-right 1.8s ease-in-out infinite alternate;
+  animation: raven-flap-right 2.8s ease-in-out infinite alternate;
   transform-origin: 12% 58%;
 }
 
@@ -2781,117 +2796,62 @@ button {
 }
 
 .raven-tail {
-  animation: raven-tail-sway 2.9s ease-in-out infinite alternate;
+  animation: raven-tail-sway 4s ease-in-out infinite alternate;
   transform-origin: 60% 82%;
 }
 
-.raven-bubble {
+.raven-burst {
   position: absolute;
-  bottom: 72px;
-  width: min(272px, calc(100vw - 32px));
-  padding: 14px 14px 13px;
-  border-radius: 20px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
-    linear-gradient(135deg, rgba(251, 191, 36, 0.1), transparent 55%);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
-  backdrop-filter: blur(16px);
-}
-
-.raven-bubble::after {
-  content: "";
-  position: absolute;
-  bottom: -10px;
-  width: 18px;
-  height: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border-right: 1px solid rgba(15, 23, 42, 0.08);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  transform: rotate(45deg);
-}
-
-.raven-bubble-left {
-  left: 0;
-}
-
-.raven-bubble-left::after {
-  left: 32px;
-}
-
-.raven-bubble-right {
-  right: -12px;
-}
-
-.raven-bubble-right::after {
-  right: 36px;
-}
-
-.raven-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--tenant-primary) 16%, white);
-  color: var(--tenant-secondary);
-  font-size: 0.78rem;
-  font-weight: 700;
+  background: linear-gradient(180deg, #fde68a, #f59e0b);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45);
+  opacity: 0;
+  transform: scale(0.3);
+  transition: opacity 180ms ease, transform 220ms ease;
 }
 
-.raven-bubble h2 {
-  margin: 10px 0 6px;
-  font-family: var(--font-serif);
-  font-size: 1.15rem;
-  line-height: 1;
-  letter-spacing: -0.03em;
+.raven-burst-a {
+  top: 4px;
+  right: 9px;
 }
 
-.raven-bubble p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.45;
+.raven-burst-b {
+  top: 16px;
+  left: 4px;
 }
 
-.raven-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.raven-action-button {
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 14px;
+.raven-burst-c {
+  right: 2px;
+  bottom: 18px;
 }
 
 @keyframes raven-hover {
   0%,
   100% {
-    transform: translateY(0) rotate(-1deg);
+    transform: translateY(0) rotate(-0.6deg);
   }
   50% {
-    transform: translateY(-4px) rotate(1deg);
+    transform: translateY(-2px) rotate(0.6deg);
   }
 }
 
 @keyframes raven-flap-left {
   0% {
-    transform: rotate(2deg) translate(0, 0);
+    transform: rotate(1deg) translate(0, 0);
   }
   100% {
-    transform: rotate(-10deg) translate(-2px, -2px);
+    transform: rotate(-5deg) translate(-1px, -1px);
   }
 }
 
 @keyframes raven-flap-right {
   0% {
-    transform: rotate(-2deg) translate(0, 0);
+    transform: rotate(-1deg) translate(0, 0);
   }
   100% {
-    transform: rotate(10deg) translate(2px, -2px);
+    transform: rotate(5deg) translate(1px, -1px);
   }
 }
 
@@ -2922,10 +2882,10 @@ button {
 
 @keyframes raven-tail-sway {
   0% {
-    transform: rotate(2deg) translateY(0);
+    transform: rotate(1deg) translateY(0);
   }
   100% {
-    transform: rotate(-3deg) translateY(1px);
+    transform: rotate(-2deg) translateY(1px);
   }
 }
 
@@ -2946,11 +2906,28 @@ button {
   opacity: 0.96;
 }
 
+.raven-guide[data-reaction="thinking"] .raven-burst,
+.raven-guide[data-reaction="excited"] .raven-burst,
+.raven-guide[data-reaction="alert"] .raven-burst {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.raven-guide[data-reaction="thinking"] .raven-burst {
+  background: linear-gradient(180deg, #dbeafe, #60a5fa);
+  box-shadow: 0 0 18px rgba(96, 165, 250, 0.45);
+}
+
 .raven-guide[data-reaction="alert"] .raven-toggle {
   box-shadow:
-    0 18px 42px rgba(15, 23, 42, 0.18),
+    0 16px 36px rgba(15, 23, 42, 0.14),
     0 0 0 6px color-mix(in srgb, var(--tenant-primary) 16%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.raven-guide[data-reaction="alert"] .raven-burst {
+  background: linear-gradient(180deg, #fca5a5, #ef4444);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.38);
 }
 
 @keyframes raven-think-bob {
@@ -2976,25 +2953,9 @@ button {
 }
 
 @media (max-width: 760px) {
-  .raven-guide {
-    transition-duration: 0.7s;
-  }
-
-  .raven-bubble {
-    bottom: 92px;
-    left: max(-220px, calc(-100vw + 144px));
-    right: auto;
-    width: min(290px, calc(100vw - 24px));
-  }
-
-  .raven-bubble::after {
-    left: auto;
-    right: 28px;
-  }
-
   .raven-toggle {
-    width: 84px;
-    height: 84px;
+    width: 68px;
+    height: 68px;
   }
 }
 

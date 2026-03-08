@@ -24,10 +24,13 @@ export function HomeRotatingValue({ messages }: HomeRotatingValueProps) {
   }, [messages]);
 
   return (
-    <p className="lead home-hero-subtext" aria-live="polite">
-      <span key={messages[index]} className="home-hero-rotator-text">
-        {messages[index]}
-      </span>
-    </p>
+    <div className="home-hero-subtext" aria-live="polite">
+      <span className="home-hero-rotator-label">RoomRaven helps you</span>
+      <p className="lead home-hero-rotator-line">
+        <span key={messages[index]} className="home-hero-rotator-text">
+          {messages[index]}
+        </span>
+      </p>
+    </div>
   );
 }
