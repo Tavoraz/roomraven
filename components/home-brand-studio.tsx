@@ -190,25 +190,6 @@ export function HomeBrandStudio({
               </div>
             </div>
           </div>
-
-          <div className="home-brand-preview-footer">
-            <div className="home-brand-preview-strip">
-              <span className="home-brand-preview-strip-label">On-site planner</span>
-              <div className="home-brand-preview-strip-bar">
-                <span className="home-brand-preview-strip-fill" />
-              </div>
-              <span className="home-brand-preview-strip-note">Shoppers stay inside your branded journey.</span>
-            </div>
-
-            <div className="home-brand-preview-compare">
-              <span className="home-brand-preview-strip-label">1v1 compare</span>
-              <div className="home-brand-preview-compare-cards">
-                <span className="home-brand-preview-compare-card home-brand-preview-compare-card-primary" />
-                <span className="home-brand-preview-compare-versus">VS</span>
-                <span className="home-brand-preview-compare-card home-brand-preview-compare-card-secondary" />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

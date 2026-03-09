@@ -117,6 +117,54 @@ button {
   animation: page-rise 720ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.audience-menu {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 18px 36px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.audience-menu-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.audience-menu-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--muted);
+  font-size: 0.94rem;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+
+.audience-menu-link:hover {
+  transform: translateY(-1px);
+}
+
+.audience-menu-link.active {
+  background: color-mix(in srgb, var(--tenant-primary) 14%, white);
+  border-color: color-mix(in srgb, var(--tenant-primary) 28%, rgba(15, 23, 42, 0.08));
+  color: var(--tenant-secondary);
+}
+
 .hero-grid,
 .marketing-grid,
 .two-column,
@@ -217,8 +265,8 @@ button {
   align-items: center;
   gap: 12px;
   width: fit-content;
-  min-height: 56px;
-  padding: 8px 16px 8px 8px;
+  min-height: 90px;
+  padding: 8px 22px 8px 8px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.82);
@@ -228,23 +276,23 @@ button {
 }
 
 .roomraven-badge.compact {
-  min-height: 46px;
-  padding: 6px 14px 6px 6px;
+  min-height: 70px;
+  padding: 7px 18px 7px 7px;
   gap: 10px;
 }
 
 .roomraven-badge-logo {
-  width: 40px;
-  height: 40px;
+  width: 74px;
+  height: 74px;
   display: block;
-  border-radius: 14px;
+  border-radius: 20px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
 }
 
 .roomraven-badge.compact .roomraven-badge-logo {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
 }
 
 .roomraven-badge-name {
@@ -456,6 +504,64 @@ button {
   display: grid;
   align-content: center;
   gap: 18px;
+}
+
+.consumer-hero-grid {
+  align-items: stretch;
+}
+
+.consumer-hero-copy .headline {
+  max-width: 11ch;
+}
+
+.consumer-lead {
+  max-width: 34rem;
+}
+
+.consumer-note {
+  max-width: 34rem;
+}
+
+.consumer-hero-visual {
+  min-height: 520px;
+}
+
+.consumer-hero-collage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+  height: 100%;
+}
+
+.consumer-scene-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.68)),
+    linear-gradient(135deg, color-mix(in srgb, var(--tenant-primary) 10%, transparent), transparent 64%);
+  box-shadow:
+    0 18px 34px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.consumer-scene-card-large {
+  grid-row: 1 / span 2;
+}
+
+.consumer-scene-media {
+  min-height: 220px;
+  height: 100%;
+  border-radius: 18px;
+}
+
+.consumer-scene-media-tall {
+  min-height: 180px;
 }
 
 .home-kicker {
@@ -1257,6 +1363,173 @@ button {
 .home-brand-grid {
   display: grid;
   gap: 16px;
+}
+
+.consumer-step-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.consumer-step-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.consumer-step-image {
+  min-height: 220px;
+  border-radius: 22px;
+}
+
+.consumer-benefit-card {
+  min-height: 156px;
+}
+
+.consumer-compare-layout {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.consumer-billing-card {
+  display: grid;
+  gap: 18px;
+  max-width: 760px;
+}
+
+.consumer-billing-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.consumer-billing-icon {
+  width: 22px;
+  height: 18px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  border: 1.5px solid var(--tenant-secondary);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 244, 238, 0.84));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 8px 18px rgba(15, 23, 42, 0.08);
+  position: relative;
+}
+
+.consumer-billing-icon::before,
+.consumer-billing-icon::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tenant-primary) 78%, #0f172a);
+}
+
+.consumer-billing-icon::before {
+  top: 5px;
+}
+
+.consumer-billing-icon::after {
+  bottom: 5px;
+}
+
+.consumer-billing-lead {
+  max-width: 38rem;
+}
+
+.consumer-billing-current {
+  margin: 0;
+  font-size: 1.02rem;
+  color: var(--tenant-secondary);
+}
+
+.consumer-billing-block {
+  display: grid;
+  gap: 10px;
+}
+
+.consumer-billing-label {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--tenant-secondary);
+}
+
+.consumer-billing-toggle-row,
+.consumer-billing-plan-row,
+.consumer-billing-feature-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.consumer-billing-toggle,
+.consumer-billing-plan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--tenant-secondary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.consumer-billing-toggle:hover,
+.consumer-billing-plan:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.consumer-billing-toggle.active,
+.consumer-billing-plan.active {
+  background: color-mix(in srgb, var(--tenant-primary) 14%, white);
+  border-color: color-mix(in srgb, var(--tenant-primary) 46%, transparent);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.08);
+}
+
+.consumer-billing-summary {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 244, 238, 0.74)),
+    linear-gradient(135deg, color-mix(in srgb, var(--tenant-primary) 10%, transparent), transparent 70%);
+}
+
+.consumer-billing-summary-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.consumer-billing-summary-price strong {
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--tenant-secondary);
+}
+
+.consumer-billing-summary-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tenant-secondary);
+}
+
+.consumer-billing-summary-copy {
+  display: grid;
+  gap: 6px;
 }
 
 .home-flow-grid {
@@ -2091,87 +2364,6 @@ button {
   background: linear-gradient(135deg, #fbf6ee, #d8c8b4);
 }
 
-.home-brand-preview-footer {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 12px;
-}
-
-.home-brand-preview-strip,
-.home-brand-preview-compare {
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.76);
-}
-
-.home-brand-preview-strip-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.home-brand-preview-strip-bar {
-  overflow: hidden;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
-}
-
-.home-brand-preview-strip-fill {
-  display: block;
-  width: 72%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(135deg, var(--brand-preview-primary), var(--brand-preview-secondary));
-}
-
-.home-brand-preview-strip-note {
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.home-brand-preview-compare-cards {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 8px;
-}
-
-.home-brand-preview-compare-card {
-  height: 72px;
-  border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow:
-    0 12px 24px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.home-brand-preview-compare-card-primary {
-  background: linear-gradient(155deg, color-mix(in srgb, var(--brand-preview-primary) 28%, white), #fbf6ee 58%, var(--brand-preview-primary));
-}
-
-.home-brand-preview-compare-card-secondary {
-  background: linear-gradient(155deg, color-mix(in srgb, var(--brand-preview-secondary) 24%, white), #f7f2eb 58%, color-mix(in srgb, var(--brand-preview-primary) 44%, white));
-}
-
-.home-brand-preview-compare-versus {
-  display: inline-grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  background: var(--brand-preview-primary);
-  color: white;
-  font-size: 0.76rem;
-  font-weight: 700;
-}
-
 .planner-preview-brand {
   display: inline-flex;
   align-items: center;
@@ -2695,18 +2887,20 @@ button {
 }
 
 @media (max-width: 960px) {
+  .audience-menu,
   .hero-grid,
   .marketing-grid,
   .two-column,
   .metrics-grid,
   .home-value-grid,
   .home-flow-grid,
+  .consumer-step-grid,
+  .consumer-compare-layout,
   .home-business-grid,
   .home-brand-proposition,
   .home-brand-grid,
   .home-brand-studio,
   .home-brand-preview-stage,
-  .home-brand-preview-footer,
   .option-grid,
   .library-grid,
   .matchup-grid,
@@ -2731,6 +2925,15 @@ button {
       "compare";
   }
 
+  .consumer-hero-collage {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .consumer-scene-card-large {
+    grid-row: auto;
+  }
+
   .home-room-example-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2740,6 +2943,11 @@ button {
   }
 
   .planner-section-header {
+    flex-direction: column;
+  }
+
+  .audience-menu {
+    align-items: flex-start;
     flex-direction: column;
   }
 }
@@ -2786,6 +2994,14 @@ button {
 
   .home-compare-vs {
     justify-self: center;
+  }
+
+  .audience-menu-links {
+    width: 100%;
+  }
+
+  .audience-menu-link {
+    flex: 1 1 160px;
   }
 }
 

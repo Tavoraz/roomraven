@@ -23,7 +23,6 @@ function buildLogoDataUrl(label: string, primaryColor: string, secondaryColor: s
 }
 
 export function seedDatabase(db: Database.Database) {
-  const tenantCount = db.prepare("SELECT COUNT(*) as count FROM tenants").get() as { count: number };
   const templateCount = db.prepare("SELECT COUNT(*) as count FROM room_templates").get() as { count: number };
 
   if (templateCount.count === 0) {
@@ -50,10 +49,6 @@ export function seedDatabase(db: Database.Database) {
       rulesJson: JSON.stringify(ROOM_TEMPLATE.rules),
       createdAt: nowIso()
     });
-  }
-
-  if (tenantCount.count > 0) {
-    return;
   }
 
   const insertTenant = db.prepare(`
@@ -98,8 +93,8 @@ export function seedDatabase(db: Database.Database) {
       id: "praxis-demo",
       name: "Praxis Demo",
       slug: "praxis-demo",
-      defaultLocale: "nl",
-      supportedLocalesJson: JSON.stringify(["nl", "en"]),
+      defaultLocale: "en",
+      supportedLocalesJson: JSON.stringify(["en", "nl"]),
       enabledRoomTypesJson: JSON.stringify(["bathroom"]),
       categoryLinksJson: JSON.stringify({
         toilet: "https://www.praxis.nl/badkamer-sanitair/toiletten",
@@ -159,6 +154,28 @@ export function seedDatabase(db: Database.Database) {
       fontFamily: "Avenir Next, sans-serif",
       createdAt,
       updatedAt: createdAt
+    },
+    {
+      id: "roomraven-consumer",
+      name: "RoomRaven Free",
+      slug: "roomraven-free",
+      defaultLocale: "en",
+      supportedLocalesJson: JSON.stringify(["en", "nl"]),
+      enabledRoomTypesJson: JSON.stringify(["bathroom", "kitchen", "living-room", "office", "bedroom"]),
+      categoryLinksJson: JSON.stringify({
+        toilet: "https://www.roomraven.com/ideas/bathroom",
+        sink: "https://www.roomraven.com/ideas/bathroom",
+        shower: "https://www.roomraven.com/ideas/bathroom",
+        bath: "https://www.roomraven.com/ideas/bathroom"
+      }),
+      logoDataUrl: null,
+      primaryColor: "#0f172a",
+      secondaryColor: "#1e293b",
+      accentColor: "#f59e0b",
+      surfaceColor: "#f8fafc",
+      fontFamily: "Space Grotesk, sans-serif",
+      createdAt,
+      updatedAt: createdAt
     }
   ] as const;
 
@@ -200,7 +217,15 @@ export function seedDatabase(db: Database.Database) {
     )
   `);
 
+  const existingTenantIds = new Set(
+    (db.prepare("SELECT id FROM tenants").all() as Array<{ id: string }>).map((row) => row.id)
+  );
+
   for (const tenant of seedTenants) {
+    if (existingTenantIds.has(tenant.id)) {
+      continue;
+    }
+
     insertTenant.run(tenant);
     insertCatalogImport.run({
       id: `${tenant.id}-catalog`,

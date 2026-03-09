@@ -15,7 +15,7 @@ export const DEMO_VARIANTS: DemoVariant[] = [
     tenantId: "praxis-demo",
     label: "Warm Natural",
     note: "Soft stone and oak",
-    locale: "nl",
+    locale: "en",
     roomType: "bathroom"
   },
   {

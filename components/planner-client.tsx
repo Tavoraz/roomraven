@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { RoomRavenBadge } from "@/components/roomraven-badge";
 import { chooseWinner, startWinnerStaysTournament } from "@/lib/compare";
 import { ROOM_TYPE_LABELS, ROOM_TYPES } from "@/lib/constants";
-import type { Locale, RenderMode, RoomType, Tenant } from "@/lib/types";
+import type { Audience, Locale, RenderMode, RoomType, Tenant } from "@/lib/types";
 
 type UploadedImage = {
   id: string;
@@ -39,10 +39,14 @@ interface PlannerClientProps {
   tenant: Tenant;
   initialLocale: Locale;
   initialRoomType: RoomType;
+  audience: Audience;
   embed: boolean;
 }
 
 const MAX_INSPIRATIONS = 6;
+const CONSUMER_LIMIT_KEY = "roomraven:consumer-generation-day";
+const CONSUMER_LIBRARY_KEY = "roomraven:consumer-library";
+const CONSUMER_LATEST_KEY = "roomraven:consumer-latest";
 
 const copy = {
   en: {
@@ -273,7 +277,29 @@ function localizedRoomLabel(locale: Locale, roomType: RoomType) {
   return ROOM_TYPE_LABELS[roomType];
 }
 
-export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }: PlannerClientProps) {
+function plannerDayKey() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam" }).format(new Date());
+}
+
+function isGeneratedConcept(value: unknown): value is GeneratedConcept {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const concept = value as Partial<GeneratedConcept>;
+
+  return (
+    typeof concept.id === "string" &&
+    typeof concept.roomType === "string" &&
+    typeof concept.prompt === "string" &&
+    (concept.renderMode === "image" || concept.renderMode === "fallback") &&
+    (typeof concept.imageUrl === "string" || concept.imageUrl === null) &&
+    typeof concept.fallbackSvg === "string" &&
+    typeof concept.createdAt === "string"
+  );
+}
+
+export function PlannerClient({ tenant, initialLocale, initialRoomType, audience, embed }: PlannerClientProps) {
   const searchParams = useSearchParams();
   const [locale, setLocale] = useState<Locale>(initialLocale);
   const [roomType, setRoomType] = useState<RoomType>(initialRoomType);
@@ -287,7 +313,10 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
   const [status, setStatus] = useState<"idle" | "generating">("idle");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [consumerLimitReached, setConsumerLimitReached] = useState(false);
+  const [consumerStorageReady, setConsumerStorageReady] = useState(audience !== "consumer");
   const trackedWinnerIdRef = useRef<string | null>(null);
+  const isConsumer = audience === "consumer";
 
   const text = copy[locale];
   const roomLibrary = useMemo(() => library.filter((concept) => concept.roomType === roomType), [library, roomType]);
@@ -308,6 +337,47 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
     { index: 3, label: locale === "nl" ? "Bibliotheek" : "Library" },
     { index: 4, label: locale === "nl" ? "Vergelijk" : "Compare" }
   ];
+  const consumerTitle =
+    locale === "nl" ? "Zie je kamer voordat je iets koopt" : "See your room before you buy anything";
+  const consumerIntro =
+    locale === "nl"
+      ? "Upload een foto van je ruimte, voeg inspiratie toe en genereer elke dag gratis een nieuw concept."
+      : "Upload a photo of your space, add inspiration, and generate one free concept each day.";
+  const consumerPlanLabel =
+    locale === "nl"
+      ? consumerLimitReached
+        ? "Gratis concept vandaag gebruikt"
+        : "1 gratis concept vandaag"
+      : consumerLimitReached
+        ? "Free concept used today"
+        : "1 free concept today";
+  const consumerPlanNote =
+    locale === "nl"
+      ? consumerLimitReached
+        ? "Je gratis concept voor vandaag is gebruikt. Kom morgen terug voor een nieuwe generatie."
+        : "Gratis accounts kunnen 1 concept per dag genereren. Bewaar favorieten op dit apparaat om later te vergelijken."
+      : consumerLimitReached
+        ? "Your free concept for today has been used. Come back tomorrow for a new generation."
+        : "Free accounts can generate 1 concept per day. Keep favorites on this device to compare later.";
+  const headlineText = isConsumer ? consumerTitle : text.title;
+  const introText = isConsumer ? consumerIntro : text.intro;
+  const flowSummaryTitle = isConsumer ? (locale === "nl" ? "Gratis plan" : "Free plan") : text.roomExamplesTitle;
+  const flowSummaryNote = isConsumer ? consumerPlanNote : text.roomExamplesNote;
+  const generateHint = isConsumer
+    ? locale === "nl"
+      ? "Je hebt een ruimtefoto en minimaal een inspiratiebeeld nodig. Gratis accounts krijgen 1 concept per dag."
+      : "You need one room photo and at least one inspiration image. Free accounts get 1 concept per day."
+    : text.generateHint;
+  const libraryNote = isConsumer
+    ? locale === "nl"
+      ? "Bewaar de concepten die je goed vindt op dit apparaat. Zodra je er minimaal twee hebt, kun je ze vergelijken."
+      : "Keep the concepts you like on this device. Once you have at least two, you can compare them."
+    : text.libraryNote;
+  const compareReadyText = isConsumer
+    ? locale === "nl"
+      ? "Bewaar minimaal twee concepten om vergelijken te ontgrendelen."
+      : "Keep at least two concepts to unlock compare mode."
+    : text.compareReady;
 
   useEffect(() => {
     if (searchParams.get("previewBrand") !== "1") {
@@ -344,6 +414,62 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
       setBrandPreview(null);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!isConsumer || typeof window === "undefined") {
+      setConsumerStorageReady(true);
+      return;
+    }
+
+    setConsumerLimitReached(window.localStorage.getItem(CONSUMER_LIMIT_KEY) === plannerDayKey());
+
+    try {
+      const storedLibrary = window.localStorage.getItem(CONSUMER_LIBRARY_KEY);
+
+      if (storedLibrary) {
+        const parsed = JSON.parse(storedLibrary) as unknown;
+
+        if (Array.isArray(parsed)) {
+          setLibrary(parsed.filter(isGeneratedConcept).slice(0, 24));
+        }
+      }
+
+      const storedLatest = window.localStorage.getItem(CONSUMER_LATEST_KEY);
+
+      if (storedLatest) {
+        const parsedLatest = JSON.parse(storedLatest) as unknown;
+
+        if (isGeneratedConcept(parsedLatest)) {
+          setLatestConcept(parsedLatest);
+        }
+      }
+    } catch {
+      window.localStorage.removeItem(CONSUMER_LIBRARY_KEY);
+      window.localStorage.removeItem(CONSUMER_LATEST_KEY);
+    } finally {
+      setConsumerStorageReady(true);
+    }
+  }, [isConsumer]);
+
+  useEffect(() => {
+    if (!isConsumer || !consumerStorageReady || typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(CONSUMER_LIBRARY_KEY, JSON.stringify(library));
+  }, [consumerStorageReady, isConsumer, library]);
+
+  useEffect(() => {
+    if (!isConsumer || !consumerStorageReady || typeof window === "undefined") {
+      return;
+    }
+
+    if (latestConcept) {
+      window.localStorage.setItem(CONSUMER_LATEST_KEY, JSON.stringify(latestConcept));
+    } else {
+      window.localStorage.removeItem(CONSUMER_LATEST_KEY);
+    }
+  }, [consumerStorageReady, isConsumer, latestConcept]);
 
   useEffect(() => {
     if (typeof window === "undefined" || window.parent === window) {
@@ -511,6 +637,12 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
       return;
     }
 
+    if (isConsumer && consumerLimitReached) {
+      setNotice(consumerPlanNote);
+      setError(null);
+      return;
+    }
+
     setStatus("generating");
     setError(null);
     setNotice(null);
@@ -524,6 +656,7 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
         },
         body: JSON.stringify({
           tenantId: tenant.id,
+          audience,
           locale,
           roomType,
           currentRoomImageDataUrl: currentRoomImage.dataUrl,
@@ -538,6 +671,12 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
 
       const payload = (await response.json()) as VisualizationResponse;
       setLatestConcept(payload.concept);
+
+      if (isConsumer && typeof window !== "undefined") {
+        const day = plannerDayKey();
+        window.localStorage.setItem(CONSUMER_LIMIT_KEY, day);
+        setConsumerLimitReached(true);
+      }
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "Unable to generate a room concept.");
     } finally {
@@ -607,9 +746,10 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
             ) : (
               <RoomRavenBadge compact />
             )}
-            <h1 className="section-title">{text.title}</h1>
-            <p className="lead">{text.intro}</p>
+            <h1 className="section-title">{headlineText}</h1>
+            <p className="lead">{introText}</p>
             <div className="chip-row">
+              {isConsumer ? <span className="chip active">{consumerPlanLabel}</span> : null}
               {displayTenant.supportedLocales.map((supportedLocale) => (
                 <button
                   key={supportedLocale}
@@ -632,8 +772,8 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
           </div>
 
           <div className="preview-card">
-            <h3>{text.roomExamplesTitle}</h3>
-            <p className="muted">{text.roomExamplesNote}</p>
+            <h3>{flowSummaryTitle}</h3>
+            <p className="muted">{flowSummaryNote}</p>
             <div className="chip-row">
               <span className="chip active">{localizedRoomLabel(locale, roomType)}</span>
               <span className="chip">{currentRoomImage ? text.roomReady : text.roomPhoto}</span>
@@ -652,7 +792,7 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
             <div className="planner-section-header">
               <div>
                 <h3 style={{ margin: 0 }}>1. {text.roomType}</h3>
-                <p className="small-note">{text.generateHint}</p>
+                <p className="small-note">{generateHint}</p>
               </div>
               <div className="planner-summary">
                 <span>{localizedRoomLabel(locale, roomType)}</span>
@@ -760,12 +900,22 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
               <button
                 type="button"
                 className="cta cta-primary"
-                disabled={!currentRoomImage || inspirationImages.length === 0 || status === "generating" || !!latestConcept}
+                disabled={
+                  !currentRoomImage ||
+                  inspirationImages.length === 0 ||
+                  status === "generating" ||
+                  !!latestConcept ||
+                  (isConsumer && consumerLimitReached)
+                }
                 onClick={handleGenerate}
               >
                 {status === "generating" ? text.generating : text.generate}
               </button>
-              {latestConcept ? <span className="small-note">{text.latestResultNote}</span> : null}
+              {isConsumer ? (
+                <span className="small-note">{consumerPlanNote}</span>
+              ) : latestConcept ? (
+                <span className="small-note">{text.latestResultNote}</span>
+              ) : null}
             </div>
             {notice ? <div className="status-banner">{notice}</div> : null}
             {error ? <div className="status-banner">{error}</div> : null}
@@ -827,7 +977,7 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
             <div className="planner-section-header">
               <div>
                 <h3 style={{ margin: 0 }}>{text.libraryTitle}</h3>
-                <p className="small-note">{text.libraryNote}</p>
+                <p className="small-note">{libraryNote}</p>
               </div>
               <div className="planner-summary">
                 <span>
@@ -914,7 +1064,7 @@ export function PlannerClient({ tenant, initialLocale, initialRoomType, embed }:
 
             {!compareState ? (
               <div className="upload-empty-state">
-                <p className="small-note">{text.compareReady}</p>
+                <p className="small-note">{compareReadyText}</p>
               </div>
             ) : compareWinner ? (
               <div className="result-grid">

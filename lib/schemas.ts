@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const wallSchema = z.enum(["north", "east", "south", "west"]);
 export const localeSchema = z.enum(["en", "nl"]);
+export const audienceSchema = z.enum(["consumer", "enterprise"]);
 export const roomTypeSchema = z.enum(["bathroom", "kitchen", "living-room", "office", "bedroom"]);
 const layoutRoomTypeSchema = z.enum(["bathroom"]);
 
@@ -85,6 +86,7 @@ export const catalogImportSchema = z.object({
 
 export const visualizationRequestSchema = z.object({
   tenantId: z.string().min(1),
+  audience: audienceSchema.default("enterprise"),
   roomType: roomTypeSchema,
   locale: localeSchema.default("en"),
   currentRoomImageDataUrl: z.string().startsWith("data:image/"),

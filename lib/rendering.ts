@@ -214,7 +214,8 @@ export async function renderLayoutOption(
       renderMode: "image" as const,
       imageUrl
     };
-  } catch {
+  } catch (error) {
+    console.error("Layout rendering fell back to SVG.", error);
     return {
       prompt,
       fallbackSvg,

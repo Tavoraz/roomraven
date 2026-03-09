@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { AudienceMenu } from "@/components/audience-menu";
 import { HomeBrandStudio } from "@/components/home-brand-studio";
 import { HomeRotatingValue } from "@/components/home-rotating-value";
-import { RoomRavenBadge } from "@/components/roomraven-badge";
 import { ScrollCta } from "@/components/scroll-cta";
 import { buildPublicDemoHref, getDefaultDemoVariant } from "@/lib/demo-variants";
 
@@ -96,9 +96,10 @@ export default function HomePage() {
 
   return (
     <main className="page-shell">
+      <AudienceMenu current="enterprise" />
+
       <section className="hero-grid">
         <div className="panel home-hero-copy">
-          <RoomRavenBadge />
           <span className="home-kicker">For retailers, showrooms, and renovation brands</span>
           <h1 className="headline">Increase conversions with visual room planning.</h1>
           <HomeRotatingValue messages={heroValueMessages} />

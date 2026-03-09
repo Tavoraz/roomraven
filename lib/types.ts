@@ -1,4 +1,5 @@
 export type Locale = "en" | "nl";
+export type Audience = "consumer" | "enterprise";
 export type RoomType = "bathroom" | "kitchen" | "living-room" | "office" | "bedroom";
 export type FixtureType = "toilet" | "sink" | "shower" | "bath";
 export type Wall = "north" | "east" | "south" | "west";

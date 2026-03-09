@@ -258,7 +258,8 @@ export async function visualizeRoomConcept(
       fallbackSvg,
       createdAt
     };
-  } catch {
+  } catch (error) {
+    console.error("Room visualization fell back to SVG.", error);
     return {
       id,
       roomType: request.roomType,

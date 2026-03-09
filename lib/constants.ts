@@ -22,7 +22,7 @@ export const ROOM_TYPE_LABELS: Record<RoomType, string> = {
   office: "Office",
   bedroom: "Bedroom"
 };
-export const DEFAULT_AI_MODEL = "google/gemini-2.5-flash-image-preview";
+export const DEFAULT_AI_MODEL = "google/gemini-2.5-flash-image";
 export const TARGET_OPTION_COUNT = 8;
 export const DOOR_DEPTH_CM = 90;
 export const WALLS: Wall[] = ["north", "east", "south", "west"];

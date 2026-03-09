@@ -34,7 +34,7 @@ Optional environment variables:
 
 ```bash
 OPENROUTER_API_KEY=...
-OPENROUTER_MODEL=google/gemini-2.5-flash-image-preview
+OPENROUTER_MODEL=google/gemini-2.5-flash-image
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
@@ -43,7 +43,7 @@ If `OPENROUTER_API_KEY` is missing, RoomRaven automatically falls back to 2D SVG
 ## Key routes
 
 - `/` marketing homepage with demo links
-- `/planner?tenantId=praxis-demo&locale=nl&roomType=bathroom` planner UI
+- `/planner?tenantId=praxis-demo&locale=en&roomType=bathroom` planner UI
 - `/admin?tenantId=praxis-demo` white-label admin
 - `/saved/[token]` saved magic-link project
 - `/roomraven-embed.js` public embed script
