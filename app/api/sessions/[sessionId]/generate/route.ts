@@ -13,13 +13,13 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await context.params;
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
 
     if (!session) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
     }
 
-    const tenant = getTenant(session.tenantId);
+    const tenant = await getTenant(session.tenantId);
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
@@ -43,11 +43,11 @@ export async function POST(
       })
     );
 
-    const updatedSession = storeGeneratedOptions(sessionId, generatedOptions);
+    const updatedSession = await storeGeneratedOptions(sessionId, generatedOptions);
 
     return NextResponse.json({
       session: updatedSession,
-      options: listSessionOptions(sessionId)
+      options: await listSessionOptions(sessionId)
     });
   } catch (error) {
     return NextResponse.json(

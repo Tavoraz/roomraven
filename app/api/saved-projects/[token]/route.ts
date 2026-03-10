@@ -9,7 +9,7 @@ export async function GET(
   }
 ) {
   const { token } = await context.params;
-  const project = getSavedProject(token);
+  const project = await getSavedProject(token);
 
   if (!project) {
     return NextResponse.json({ error: "Saved project not found." }, { status: 404 });

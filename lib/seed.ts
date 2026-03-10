@@ -23,7 +23,9 @@ function buildLogoDataUrl(label: string, primaryColor: string, secondaryColor: s
 }
 
 export function seedDatabase(db: Database.Database) {
-  const templateCount = db.prepare("SELECT COUNT(*) as count FROM room_templates").get() as { count: number };
+  const templateCount = db.prepare("SELECT COUNT(*) as count FROM room_templates").get() as {
+    count: number;
+  };
 
   if (templateCount.count === 0) {
     db.prepare(

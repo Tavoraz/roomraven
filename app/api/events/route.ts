@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    trackEvent(parsed.data);
+    await trackEvent(parsed.data);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Unable to record analytics event." }, { status: 500 });

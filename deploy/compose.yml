@@ -1,0 +1,22 @@
+services:
+  roomraven:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: roomraven-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      ROOMRAVEN_DB_PATH: /app/data/roomraven.db
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-https://roomraven.com}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash-image}
+    volumes:
+      - roomraven-data:/app/data
+
+volumes:
+  roomraven-data:
+

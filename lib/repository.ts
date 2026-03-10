@@ -1,7 +1,5 @@
-import type Database from "better-sqlite3";
-
 import { getDb } from "@/lib/db";
-import { initializeTournament, advanceTournament } from "@/lib/tournament";
+import { advanceTournament, initializeTournament } from "@/lib/tournament";
 import type {
   AnalyticsSummary,
   CatalogImport,
@@ -19,6 +17,8 @@ import type {
 } from "@/lib/types";
 import { makeId, nowIso, safeJsonParse } from "@/lib/utils";
 
+type SqlParam = string | number | null;
+
 type TenantRow = {
   id: string;
   name: string;
@@ -35,6 +35,13 @@ type TenantRow = {
   font_family: string;
   created_at: string;
   updated_at: string;
+};
+
+type RoomTemplateRow = {
+  id: string;
+  room_type: RoomType;
+  name: string;
+  rules_json: string;
 };
 
 type SessionRow = {
@@ -98,7 +105,7 @@ type AnalyticsRow = {
   locale: Locale;
   room_type: RoomType;
   event_type: string;
-  count: number;
+  count: number | string;
 };
 
 function mapTenant(row: TenantRow): Tenant {
@@ -176,28 +183,13 @@ function mapCatalogImport(row: CatalogImportRow): CatalogImport {
     >;
   }>(row.raw_json, {
     mappings: {
-      toilet: {
-        label: "",
-        categoryUrl: "",
-        note: ""
-      },
-      sink: {
-        label: "",
-        categoryUrl: "",
-        note: ""
-      },
-      shower: {
-        label: "",
-        categoryUrl: "",
-        note: ""
-      },
-      bath: {
-        label: "",
-        categoryUrl: "",
-        note: ""
-      }
+      toilet: { label: "", categoryUrl: "", note: "" },
+      sink: { label: "", categoryUrl: "", note: "" },
+      shower: { label: "", categoryUrl: "", note: "" },
+      bath: { label: "", categoryUrl: "", note: "" }
     }
   });
+
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -219,80 +211,96 @@ function mapSavedProject(row: SavedProjectRow): SavedProject {
   };
 }
 
-function db() {
-  return getDb();
+async function firstRow<T>(sql: string, params: SqlParam[] = []) {
+  const db = await getDb();
+  return (await db.prepare(sql).bind(...params).first<T>()) ?? null;
 }
 
-export function listTenants() {
-  const rows = db()
-    .prepare("SELECT * FROM tenants ORDER BY name ASC")
-    .all() as TenantRow[];
+async function allRows<T>(sql: string, params: SqlParam[] = []) {
+  const db = await getDb();
+  const result = await db.prepare(sql).bind(...params).all<T>();
+  return result.results ?? [];
+}
+
+async function run(sql: string, params: SqlParam[] = []) {
+  const db = await getDb();
+  await db.prepare(sql).bind(...params).run();
+}
+
+async function batch(
+  statements: Array<{
+    sql: string;
+    params?: SqlParam[];
+  }>
+) {
+  const db = await getDb();
+  await db.batch(statements.map(({ sql, params = [] }) => db.prepare(sql).bind(...params)));
+}
+
+export async function listTenants() {
+  const rows = await allRows<TenantRow>("SELECT * FROM tenants ORDER BY name ASC");
   return rows.map(mapTenant);
 }
 
-export function getTenant(tenantId: string) {
-  const row = db().prepare("SELECT * FROM tenants WHERE id = ?").get(tenantId) as TenantRow | undefined;
+export async function getTenant(tenantId: string) {
+  const row = await firstRow<TenantRow>("SELECT * FROM tenants WHERE id = ?", [tenantId]);
   return row ? mapTenant(row) : null;
 }
 
-export function updateTenant(tenantId: string, tenant: Omit<Tenant, "id" | "slug" | "createdAt" | "updatedAt">) {
-  const existing = getTenant(tenantId);
+export async function updateTenant(
+  tenantId: string,
+  tenant: Omit<Tenant, "id" | "slug" | "createdAt" | "updatedAt">
+) {
+  const existing = await getTenant(tenantId);
 
   if (!existing) {
     throw new Error("Tenant not found.");
   }
 
   const updatedAt = nowIso();
-  db()
-    .prepare(
-      `
-        UPDATE tenants
-        SET
-          name = @name,
-          default_locale = @defaultLocale,
-          supported_locales_json = @supportedLocalesJson,
-          enabled_room_types_json = @enabledRoomTypesJson,
-          category_links_json = @categoryLinksJson,
-          logo_data_url = @logoDataUrl,
-          primary_color = @primaryColor,
-          secondary_color = @secondaryColor,
-          accent_color = @accentColor,
-          surface_color = @surfaceColor,
-          font_family = @fontFamily,
-          updated_at = @updatedAt
-        WHERE id = @id
-      `
-    )
-    .run({
-      id: tenantId,
-      name: tenant.name,
-      defaultLocale: tenant.defaultLocale,
-      supportedLocalesJson: JSON.stringify(tenant.supportedLocales),
-      enabledRoomTypesJson: JSON.stringify(tenant.enabledRoomTypes),
-      categoryLinksJson: JSON.stringify(tenant.categoryLinks),
-      logoDataUrl: tenant.brandTheme.logoDataUrl,
-      primaryColor: tenant.brandTheme.primaryColor,
-      secondaryColor: tenant.brandTheme.secondaryColor,
-      accentColor: tenant.brandTheme.accentColor,
-      surfaceColor: tenant.brandTheme.surfaceColor,
-      fontFamily: tenant.brandTheme.fontFamily,
-      updatedAt
-    });
+  await run(
+    `
+      UPDATE tenants
+      SET
+        name = ?,
+        default_locale = ?,
+        supported_locales_json = ?,
+        enabled_room_types_json = ?,
+        category_links_json = ?,
+        logo_data_url = ?,
+        primary_color = ?,
+        secondary_color = ?,
+        accent_color = ?,
+        surface_color = ?,
+        font_family = ?,
+        updated_at = ?
+      WHERE id = ?
+    `,
+    [
+      tenant.name,
+      tenant.defaultLocale,
+      JSON.stringify(tenant.supportedLocales),
+      JSON.stringify(tenant.enabledRoomTypes),
+      JSON.stringify(tenant.categoryLinks),
+      tenant.brandTheme.logoDataUrl,
+      tenant.brandTheme.primaryColor,
+      tenant.brandTheme.secondaryColor,
+      tenant.brandTheme.accentColor,
+      tenant.brandTheme.surfaceColor,
+      tenant.brandTheme.fontFamily,
+      updatedAt,
+      tenantId
+    ]
+  );
 
   return getTenant(tenantId);
 }
 
-export function getRoomTemplate(roomType: RoomType): RoomTemplate | null {
-  const row = db()
-    .prepare("SELECT * FROM room_templates WHERE room_type = ? LIMIT 1")
-    .get(roomType) as
-    | {
-        id: string;
-        room_type: RoomType;
-        name: string;
-        rules_json: string;
-      }
-    | undefined;
+export async function getRoomTemplate(roomType: RoomType): Promise<RoomTemplate | null> {
+  const row = await firstRow<RoomTemplateRow>(
+    "SELECT * FROM room_templates WHERE room_type = ? LIMIT 1",
+    [roomType]
+  );
 
   if (!row) {
     return null;
@@ -309,57 +317,44 @@ export function getRoomTemplate(roomType: RoomType): RoomTemplate | null {
       maximumDepthCm: 520,
       targetOptionCount: 8
     })
-  } as RoomTemplate;
+  };
 }
 
-export function createSession(tenantId: string, input: SessionInput) {
+export async function createSession(tenantId: string, input: SessionInput) {
   const createdAt = nowIso();
   const id = makeId("session");
   const tournamentState = initializeTournament([]);
 
-  db()
-    .prepare(
-      `
-        INSERT INTO layout_sessions (
-          id,
-          tenant_id,
-          room_type,
-          locale,
-          input_json,
-          option_ids_json,
-          tournament_state_json,
-          status,
-          winner_option_id,
-          created_at,
-          updated_at
-        ) VALUES (
-          @id,
-          @tenantId,
-          @roomType,
-          @locale,
-          @inputJson,
-          @optionIdsJson,
-          @tournamentStateJson,
-          'draft',
-          NULL,
-          @createdAt,
-          @updatedAt
-        )
-      `
-    )
-    .run({
+  await run(
+    `
+      INSERT INTO layout_sessions (
+        id,
+        tenant_id,
+        room_type,
+        locale,
+        input_json,
+        option_ids_json,
+        tournament_state_json,
+        status,
+        winner_option_id,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', NULL, ?, ?)
+    `,
+    [
       id,
       tenantId,
-      roomType: input.roomType,
-      locale: input.locale,
-      inputJson: JSON.stringify(input),
-      optionIdsJson: JSON.stringify([]),
-      tournamentStateJson: JSON.stringify(tournamentState),
+      input.roomType,
+      input.locale,
+      JSON.stringify(input),
+      JSON.stringify([]),
+      JSON.stringify(tournamentState),
       createdAt,
-      updatedAt: createdAt
-    });
+      createdAt
+    ]
+  );
 
-  trackEvent({
+  await trackEvent({
     tenantId,
     sessionId: id,
     roomType: input.roomType,
@@ -371,28 +366,25 @@ export function createSession(tenantId: string, input: SessionInput) {
   return getSession(id);
 }
 
-export function getSession(sessionId: string) {
-  const row = db()
-    .prepare("SELECT * FROM layout_sessions WHERE id = ?")
-    .get(sessionId) as SessionRow | undefined;
+export async function getSession(sessionId: string) {
+  const row = await firstRow<SessionRow>("SELECT * FROM layout_sessions WHERE id = ?", [sessionId]);
   return row ? mapSession(row) : null;
 }
 
-export function listSessionOptions(sessionId: string) {
-  const rows = db()
-    .prepare("SELECT * FROM layout_options WHERE session_id = ? ORDER BY rank_index ASC")
-    .all(sessionId) as LayoutOptionRow[];
+export async function listSessionOptions(sessionId: string) {
+  const rows = await allRows<LayoutOptionRow>(
+    "SELECT * FROM layout_options WHERE session_id = ? ORDER BY rank_index ASC",
+    [sessionId]
+  );
   return rows.map(mapLayoutOption);
 }
 
-export function getLayoutOption(optionId: string) {
-  const row = db()
-    .prepare("SELECT * FROM layout_options WHERE id = ?")
-    .get(optionId) as LayoutOptionRow | undefined;
+export async function getLayoutOption(optionId: string) {
+  const row = await firstRow<LayoutOptionRow>("SELECT * FROM layout_options WHERE id = ?", [optionId]);
   return row ? mapLayoutOption(row) : null;
 }
 
-export function storeGeneratedOptions(
+export async function storeGeneratedOptions(
   sessionId: string,
   generatedOptions: Array<
     Omit<LayoutOption, "id" | "sessionId" | "createdAt"> & {
@@ -401,76 +393,60 @@ export function storeGeneratedOptions(
     }
   >
 ) {
-  const database = db();
-  const removeExisting = database.prepare("DELETE FROM layout_options WHERE session_id = ?");
-  const insertOption = database.prepare(
-    `
-      INSERT INTO layout_options (
-        id,
-        session_id,
-        rank_index,
-        score,
-        render_mode,
-        image_url,
-        fallback_svg,
-        prompt,
-        layout_json,
-        created_at
-      ) VALUES (
-        @id,
-        @sessionId,
-        @rankIndex,
-        @score,
-        @renderMode,
-        @imageUrl,
-        @fallbackSvg,
-        @prompt,
-        @layoutJson,
-        @createdAt
-      )
-    `
-  );
-
   const optionIds = generatedOptions.map((option) => option.id);
   const tournamentState = initializeTournament(optionIds);
   const updatedAt = nowIso();
 
-  const transaction = database.transaction(() => {
-    removeExisting.run(sessionId);
-    for (const option of generatedOptions) {
-      insertOption.run({
-        id: option.id,
+  await batch([
+    {
+      sql: "DELETE FROM layout_options WHERE session_id = ?",
+      params: [sessionId]
+    },
+    ...generatedOptions.map((option) => ({
+      sql: `
+        INSERT INTO layout_options (
+          id,
+          session_id,
+          rank_index,
+          score,
+          render_mode,
+          image_url,
+          fallback_svg,
+          prompt,
+          layout_json,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      params: [
+        option.id,
         sessionId,
-        rankIndex: option.rankIndex,
-        score: option.score,
-        renderMode: option.renderMode,
-        imageUrl: option.imageUrl,
-        fallbackSvg: option.fallbackSvg,
-        prompt: option.prompt,
-        layoutJson: JSON.stringify(option.layout),
-        createdAt: option.createdAt
-      });
+        option.rankIndex,
+        option.score,
+        option.renderMode,
+        option.imageUrl,
+        option.fallbackSvg,
+        option.prompt,
+        JSON.stringify(option.layout),
+        option.createdAt
+      ]
+    })),
+    {
+      sql: `
+        UPDATE layout_sessions
+        SET option_ids_json = ?, tournament_state_json = ?, status = 'generated', updated_at = ?
+        WHERE id = ?
+      `,
+      params: [JSON.stringify(optionIds), JSON.stringify(tournamentState), updatedAt, sessionId]
     }
-    database
-      .prepare(
-        `
-          UPDATE layout_sessions
-          SET option_ids_json = ?, tournament_state_json = ?, status = 'generated', updated_at = ?
-          WHERE id = ?
-        `
-      )
-      .run(JSON.stringify(optionIds), JSON.stringify(tournamentState), updatedAt, sessionId);
-  });
+  ]);
 
-  transaction();
-
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
 
   if (!session) {
     throw new Error("Session not found after generating options.");
   }
 
-  trackEvent({
+  await trackEvent({
     tenantId: session.tenantId,
     sessionId,
     roomType: session.roomType,
@@ -482,8 +458,8 @@ export function storeGeneratedOptions(
   return session;
 }
 
-export function submitVote(sessionId: string, winnerOptionId: string) {
-  const session = getSession(sessionId);
+export async function submitVote(sessionId: string, winnerOptionId: string) {
+  const session = await getSession(sessionId);
 
   if (!session) {
     throw new Error("Session not found.");
@@ -495,29 +471,29 @@ export function submitVote(sessionId: string, winnerOptionId: string) {
     throw new Error("The tournament is already finished.");
   }
 
-  const { nextState, round, matchupIndex, loserOptionId } = advanceTournament(session.tournamentState, winnerOptionId);
+  const { nextState, round, matchupIndex, loserOptionId } = advanceTournament(
+    session.tournamentState,
+    winnerOptionId
+  );
   const voteId = makeId("vote");
   const createdAt = nowIso();
 
-  const database = db();
-  const transaction = database.transaction(() => {
-    database
-      .prepare(
-        `
-          INSERT INTO comparison_votes (
-            id,
-            session_id,
-            round,
-            matchup_index,
-            left_option_id,
-            right_option_id,
-            winner_option_id,
-            loser_option_id,
-            created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
-      )
-      .run(
+  await batch([
+    {
+      sql: `
+        INSERT INTO comparison_votes (
+          id,
+          session_id,
+          round,
+          matchup_index,
+          left_option_id,
+          right_option_id,
+          winner_option_id,
+          loser_option_id,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      params: [
         voteId,
         sessionId,
         round,
@@ -527,46 +503,39 @@ export function submitVote(sessionId: string, winnerOptionId: string) {
         winnerOptionId,
         loserOptionId,
         createdAt
-      );
-
-    database
-      .prepare(
-        `
-          UPDATE layout_sessions
-          SET
-            tournament_state_json = ?,
-            winner_option_id = ?,
-            status = ?,
-            updated_at = ?
-          WHERE id = ?
-        `
-      )
-      .run(
+      ]
+    },
+    {
+      sql: `
+        UPDATE layout_sessions
+        SET
+          tournament_state_json = ?,
+          winner_option_id = ?,
+          status = ?,
+          updated_at = ?
+        WHERE id = ?
+      `,
+      params: [
         JSON.stringify(nextState),
         nextState.winnerOptionId,
         nextState.winnerOptionId ? "completed" : "generated",
         createdAt,
         sessionId
-      );
-  });
+      ]
+    }
+  ]);
 
-  transaction();
-
-  trackEvent({
+  await trackEvent({
     tenantId: session.tenantId,
     sessionId,
     roomType: session.roomType,
     locale: session.locale,
     eventType: "matchup_voted",
-    metadata: {
-      round,
-      matchupIndex,
-      winnerOptionId
-    }
+    metadata: { round, matchupIndex, winnerOptionId }
   });
 
   if (nextState.winnerOptionId) {
-    trackEvent({
+    await trackEvent({
       tenantId: session.tenantId,
       sessionId,
       roomType: session.roomType,
@@ -577,15 +546,16 @@ export function submitVote(sessionId: string, winnerOptionId: string) {
   }
 
   return {
-    session: getSession(sessionId),
-    votes: listVotes(sessionId)
+    session: await getSession(sessionId),
+    votes: await listVotes(sessionId)
   };
 }
 
-export function listVotes(sessionId: string) {
-  const rows = db()
-    .prepare("SELECT * FROM comparison_votes WHERE session_id = ? ORDER BY round ASC, matchup_index ASC")
-    .all(sessionId) as VoteRow[];
+export async function listVotes(sessionId: string) {
+  const rows = await allRows<VoteRow>(
+    "SELECT * FROM comparison_votes WHERE session_id = ? ORDER BY round ASC, matchup_index ASC",
+    [sessionId]
+  );
 
   return rows.map<ComparisonVote>((row) => ({
     id: row.id,
@@ -600,58 +570,87 @@ export function listVotes(sessionId: string) {
   }));
 }
 
-export function getLatestCatalogImport(tenantId: string) {
-  const row = db()
-    .prepare("SELECT * FROM catalog_imports WHERE tenant_id = ? ORDER BY imported_at DESC LIMIT 1")
-    .get(tenantId) as CatalogImportRow | undefined;
+export async function getLatestCatalogImport(tenantId: string) {
+  const row = await firstRow<CatalogImportRow>(
+    "SELECT * FROM catalog_imports WHERE tenant_id = ? ORDER BY imported_at DESC LIMIT 1",
+    [tenantId]
+  );
   return row ? mapCatalogImport(row) : null;
 }
 
-export function importCatalog(
+export async function importCatalog(
   tenantId: string,
   name: string,
   mappings: CatalogImport["mappings"]
 ) {
   const id = makeId("catalog");
   const importedAt = nowIso();
+  const tenant = await getTenant(tenantId);
+  const updatedAt = nowIso();
 
-  db()
-    .prepare(
-      `
+  await batch([
+    {
+      sql: `
         INSERT INTO catalog_imports (id, tenant_id, name, raw_json, imported_at)
         VALUES (?, ?, ?, ?, ?)
-      `
-    )
-    .run(id, tenantId, name, JSON.stringify({ mappings }), importedAt);
-
-  const tenant = getTenant(tenantId);
-
-  if (tenant) {
-    updateTenant(tenantId, {
-      name: tenant.name,
-      defaultLocale: tenant.defaultLocale,
-      supportedLocales: tenant.supportedLocales,
-      enabledRoomTypes: tenant.enabledRoomTypes,
-      brandTheme: tenant.brandTheme,
-      categoryLinks: {
-        toilet: mappings.toilet.categoryUrl,
-        sink: mappings.sink.categoryUrl,
-        shower: mappings.shower.categoryUrl,
-        bath: mappings.bath.categoryUrl
-      }
-    });
-  }
+      `,
+      params: [id, tenantId, name, JSON.stringify({ mappings }), importedAt]
+    },
+    ...(tenant
+      ? [
+          {
+            sql: `
+              UPDATE tenants
+              SET
+                name = ?,
+                default_locale = ?,
+                supported_locales_json = ?,
+                enabled_room_types_json = ?,
+                category_links_json = ?,
+                logo_data_url = ?,
+                primary_color = ?,
+                secondary_color = ?,
+                accent_color = ?,
+                surface_color = ?,
+                font_family = ?,
+                updated_at = ?
+              WHERE id = ?
+            `,
+            params: [
+              tenant.name,
+              tenant.defaultLocale,
+              JSON.stringify(tenant.supportedLocales),
+              JSON.stringify(tenant.enabledRoomTypes),
+              JSON.stringify({
+                toilet: mappings.toilet.categoryUrl,
+                sink: mappings.sink.categoryUrl,
+                shower: mappings.shower.categoryUrl,
+                bath: mappings.bath.categoryUrl
+              }),
+              tenant.brandTheme.logoDataUrl,
+              tenant.brandTheme.primaryColor,
+              tenant.brandTheme.secondaryColor,
+              tenant.brandTheme.accentColor,
+              tenant.brandTheme.surfaceColor,
+              tenant.brandTheme.fontFamily,
+              updatedAt,
+              tenantId
+            ]
+          }
+        ]
+      : [])
+  ]);
 
   return getLatestCatalogImport(tenantId);
 }
 
-export function createSavedProject(
+export async function createSavedProject(
   sessionId: string,
   email: string,
   locale: Locale,
   shoppingList: ShoppingListItem[]
 ) {
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
 
   if (!session) {
     throw new Error("Session not found.");
@@ -661,23 +660,22 @@ export function createSavedProject(
   const token = makeId("magic");
   const createdAt = nowIso();
 
-  db()
-    .prepare(
-      `
-        INSERT INTO saved_projects (
-          id,
-          session_id,
-          token,
-          email,
-          locale,
-          shopping_list_json,
-          created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `
-    )
-    .run(id, sessionId, token, email, locale, JSON.stringify(shoppingList), createdAt);
+  await run(
+    `
+      INSERT INTO saved_projects (
+        id,
+        session_id,
+        token,
+        email,
+        locale,
+        shopping_list_json,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [id, sessionId, token, email, locale, JSON.stringify(shoppingList), createdAt]
+  );
 
-  trackEvent({
+  await trackEvent({
     tenantId: session.tenantId,
     sessionId,
     roomType: session.roomType,
@@ -689,24 +687,24 @@ export function createSavedProject(
   return getSavedProject(token);
 }
 
-export function getSavedProject(token: string) {
-  const row = db()
-    .prepare("SELECT * FROM saved_projects WHERE token = ?")
-    .get(token) as SavedProjectRow | undefined;
+export async function getSavedProject(token: string) {
+  const row = await firstRow<SavedProjectRow>("SELECT * FROM saved_projects WHERE token = ?", [token]);
 
   if (!row) {
     return null;
   }
 
   const project = mapSavedProject(row);
-  const session = getSession(project.sessionId);
+  const session = await getSession(project.sessionId);
 
   if (!session) {
     return null;
   }
 
-  const winner = session.winnerOptionId ? getLayoutOption(session.winnerOptionId) : null;
-  const tenant = getTenant(session.tenantId);
+  const [winner, tenant] = await Promise.all([
+    session.winnerOptionId ? getLayoutOption(session.winnerOptionId) : Promise.resolve(null),
+    getTenant(session.tenantId)
+  ]);
 
   return {
     project,
@@ -716,7 +714,7 @@ export function getSavedProject(token: string) {
   };
 }
 
-export function trackEvent({
+export async function trackEvent({
   tenantId,
   sessionId,
   roomType,
@@ -731,38 +729,38 @@ export function trackEvent({
   eventType: string;
   metadata: Record<string, unknown>;
 }) {
-  db()
-    .prepare(
-      `
-        INSERT INTO analytics_events (
-          id,
-          tenant_id,
-          session_id,
-          room_type,
-          locale,
-          event_type,
-          metadata_json,
-          created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `
-    )
-    .run(makeId("event"), tenantId, sessionId, roomType, locale, eventType, JSON.stringify(metadata), nowIso());
+  await run(
+    `
+      INSERT INTO analytics_events (
+        id,
+        tenant_id,
+        session_id,
+        room_type,
+        locale,
+        event_type,
+        metadata_json,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [makeId("event"), tenantId, sessionId, roomType, locale, eventType, JSON.stringify(metadata), nowIso()]
+  );
 }
 
-export function getAnalyticsSummary(tenantId: string): AnalyticsSummary {
-  const rows = db()
-    .prepare(
-      `
-        SELECT locale, room_type, event_type, COUNT(*) as count
-        FROM analytics_events
-        WHERE tenant_id = ?
-        GROUP BY locale, room_type, event_type
-      `
-    )
-    .all(tenantId) as AnalyticsRow[];
+export async function getAnalyticsSummary(tenantId: string): Promise<AnalyticsSummary> {
+  const rows = await allRows<AnalyticsRow>(
+    `
+      SELECT locale, room_type, event_type, COUNT(*) as count
+      FROM analytics_events
+      WHERE tenant_id = ?
+      GROUP BY locale, room_type, event_type
+    `,
+    [tenantId]
+  );
 
   const total = (eventType: string) =>
-    rows.filter((row) => row.event_type === eventType).reduce((sum, row) => sum + row.count, 0);
+    rows
+      .filter((row) => row.event_type === eventType)
+      .reduce((sum, row) => sum + Number(row.count), 0);
   const starts = total("session_started");
   const generations = total("generation_completed");
   const completedMatchups = total("winner_selected");
@@ -788,19 +786,19 @@ export function getAnalyticsSummary(tenantId: string): AnalyticsSummary {
       locale,
       starts: rows
         .filter((row) => row.locale === locale && row.event_type === "session_started")
-        .reduce((sum, row) => sum + row.count, 0),
+        .reduce((sum, row) => sum + Number(row.count), 0),
       savedProjects: rows
         .filter((row) => row.locale === locale && row.event_type === "project_saved")
-        .reduce((sum, row) => sum + row.count, 0)
+        .reduce((sum, row) => sum + Number(row.count), 0)
     })),
     byRoomType: roomTypes.map((roomType) => ({
       roomType,
       starts: rows
         .filter((row) => row.room_type === roomType && row.event_type === "session_started")
-        .reduce((sum, row) => sum + row.count, 0),
+        .reduce((sum, row) => sum + Number(row.count), 0),
       completions: rows
         .filter((row) => row.room_type === roomType && row.event_type === "winner_selected")
-        .reduce((sum, row) => sum + row.count, 0)
+        .reduce((sum, row) => sum + Number(row.count), 0)
     }))
   };
 }

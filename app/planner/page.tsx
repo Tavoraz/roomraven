@@ -1,12 +1,20 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PlannerClient } from "@/components/planner-client";
 import { ROOM_TYPES } from "@/lib/constants";
 import { getDefaultDemoVariant, getDemoVariantBySlug } from "@/lib/demo-variants";
 import { getTenant } from "@/lib/repository";
+import { buildPageMetadata } from "@/lib/seo";
 import type { Audience, Locale, RoomType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = buildPageMetadata({
+  title: "Room Planner Workspace | RoomRaven",
+  description: "Interactive RoomRaven planner workspace.",
+  path: "/planner",
+  noIndex: true
+});
 
 function resolveValue(value: string | string[] | undefined, fallback: string) {
   return Array.isArray(value) ? value[0] : value ?? fallback;
@@ -29,7 +37,7 @@ export default async function PlannerPage({
   const demo = getDemoVariantBySlug(resolveValue(params.demo, ""));
   const defaultDemo = getDefaultDemoVariant();
   const tenantId = resolveValue(params.tenantId, demo?.tenantId ?? defaultDemo.tenantId);
-  const tenant = getTenant(tenantId);
+  const tenant = await getTenant(tenantId);
 
   if (!tenant) {
     notFound();

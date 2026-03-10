@@ -10,7 +10,7 @@ export async function GET(
   }
 ) {
   const { tenantId } = await context.params;
-  const tenant = getTenant(tenantId);
+  const tenant = await getTenant(tenantId);
 
   if (!tenant) {
     return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
@@ -27,7 +27,7 @@ export async function PUT(
 ) {
   try {
     const { tenantId } = await context.params;
-    const tenant = getTenant(tenantId);
+    const tenant = await getTenant(tenantId);
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
@@ -45,7 +45,7 @@ export async function PUT(
       );
     }
 
-    const updated = updateTenant(tenantId, parsed.data);
+    const updated = await updateTenant(tenantId, parsed.data);
 
     return NextResponse.json({ tenant: updated });
   } catch {

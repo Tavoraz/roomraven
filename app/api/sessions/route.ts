@@ -17,13 +17,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const tenant = getTenant(parsed.data.tenantId);
+    const tenant = await getTenant(parsed.data.tenantId);
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
     }
 
-    const session = createSession(parsed.data.tenantId, {
+    const session = await createSession(parsed.data.tenantId, {
       roomType: parsed.data.roomType,
       locale: parsed.data.locale,
       widthCm: parsed.data.widthCm,

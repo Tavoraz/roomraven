@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tenant = getTenant(parsed.data.tenantId);
+    const tenant = await getTenant(parsed.data.tenantId);
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    trackEvent({
+    await trackEvent({
       tenantId: tenant.id,
       sessionId: null,
       roomType: parsed.data.roomType,
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const concept = await visualizeRoomConcept(tenant, parsed.data);
 
-    trackEvent({
+    await trackEvent({
       tenantId: tenant.id,
       sessionId: null,
       roomType: parsed.data.roomType,

@@ -12,7 +12,7 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await context.params;
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
 
     if (!session) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
@@ -34,15 +34,16 @@ export async function POST(
       );
     }
 
-    const tenant = getTenant(session.tenantId);
-    const winner = getLayoutOption(session.winnerOptionId);
+    const tenant = await getTenant(session.tenantId);
+    const winner = await getLayoutOption(session.winnerOptionId);
 
     if (!tenant || !winner) {
       return NextResponse.json({ error: "Session data is incomplete." }, { status: 400 });
     }
 
-    const shoppingList = buildShoppingList(tenant, winner, getLatestCatalogImport(tenant.id));
-    const savedProject = createSavedProject(sessionId, parsed.data.email, session.locale, shoppingList);
+    const latestCatalogImport = await getLatestCatalogImport(tenant.id);
+    const shoppingList = buildShoppingList(tenant, winner, latestCatalogImport);
+    const savedProject = await createSavedProject(sessionId, parsed.data.email, session.locale, shoppingList);
     const origin = new URL(request.url).origin;
 
     if (!savedProject) {

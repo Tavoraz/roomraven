@@ -11,7 +11,7 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await context.params;
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
 
     if (!session) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
@@ -29,11 +29,11 @@ export async function POST(
       );
     }
 
-    const result = submitVote(sessionId, parsed.data.winnerOptionId);
+    const result = await submitVote(sessionId, parsed.data.winnerOptionId);
 
     return NextResponse.json({
       session: result.session,
-      options: listSessionOptions(sessionId),
+      options: await listSessionOptions(sessionId),
       votes: result.votes
     });
   } catch (error) {

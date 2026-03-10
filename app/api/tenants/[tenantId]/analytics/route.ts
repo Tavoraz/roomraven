@@ -9,13 +9,13 @@ export async function GET(
   }
 ) {
   const { tenantId } = await context.params;
-  const tenant = getTenant(tenantId);
+  const tenant = await getTenant(tenantId);
 
   if (!tenant) {
     return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
   }
 
   return NextResponse.json({
-    analytics: getAnalyticsSummary(tenantId)
+    analytics: await getAnalyticsSummary(tenantId)
   });
 }

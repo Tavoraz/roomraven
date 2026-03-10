@@ -85,7 +85,7 @@ const layout = {
 
 describe("renderLayoutOption", () => {
   afterEach(() => {
-    delete process.env.OPENROUTER_API_KEY;
+    process.env.OPENROUTER_API_KEY = "";
   });
 
   it("falls back to a 2D SVG when no OpenRouter key is configured", async () => {

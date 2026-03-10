@@ -1,18 +1,94 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
-import Database from "better-sqlite3";
-
 import { seedDatabase } from "@/lib/seed";
 
-const dataDir = path.join(process.cwd(), "data");
-const dbPath = path.join(dataDir, "roomraven.db");
+export type D1Value = string | number | null;
 
-declare global {
-  var __roomravenDb: Database.Database | undefined;
+export interface D1PreparedStatementLike {
+  bind(...values: D1Value[]): D1PreparedStatementLike;
+  first<T = Record<string, unknown>>(): Promise<T | null>;
+  all<T = Record<string, unknown>>(): Promise<{ results?: T[] }>;
+  run(): Promise<unknown>;
 }
 
-function initialize(db: Database.Database) {
+export interface D1DatabaseLike {
+  prepare(query: string): D1PreparedStatementLike;
+  batch(statements: D1PreparedStatementLike[]): Promise<unknown[]>;
+}
+
+type BetterSqliteStatementInstance = import("better-sqlite3").Statement;
+type BetterSqliteDatabaseInstance = import("better-sqlite3").Database;
+
+class BetterSqliteStatement implements D1PreparedStatementLike {
+  constructor(
+    private readonly statement: BetterSqliteStatementInstance,
+    private readonly values: D1Value[] = []
+  ) {}
+
+  bind(...values: D1Value[]) {
+    return new BetterSqliteStatement(this.statement, values);
+  }
+
+  async first<T = Record<string, unknown>>() {
+    return (this.statement.get(...this.values) as T | undefined) ?? null;
+  }
+
+  async all<T = Record<string, unknown>>() {
+    return {
+      results: this.statement.all(...this.values) as T[]
+    };
+  }
+
+  async run() {
+    return this.statement.run(...this.values);
+  }
+
+  execute() {
+    return this.statement.run(...this.values);
+  }
+}
+
+class BetterSqliteDatabase implements D1DatabaseLike {
+  constructor(private readonly database: BetterSqliteDatabaseInstance) {}
+
+  prepare(query: string) {
+    return new BetterSqliteStatement(this.database.prepare(query));
+  }
+
+  async batch(statements: D1PreparedStatementLike[]) {
+    const sqliteStatements = statements as BetterSqliteStatement[];
+    const transaction = this.database.transaction(() =>
+      sqliteStatements.map((statement) => statement.execute())
+    );
+    return transaction();
+  }
+}
+
+let nodeDbPromise: Promise<D1DatabaseLike> | null = null;
+
+type CloudflareModule = {
+  getCloudflareContext(): {
+    env: {
+      DB?: D1DatabaseLike;
+    };
+  };
+};
+
+async function getCloudflareDb() {
+  try {
+    const importModule = new Function("specifier", "return import(specifier);") as (
+      specifier: string
+    ) => Promise<CloudflareModule>;
+    const { getCloudflareContext } = await importModule("@opennextjs/cloudflare");
+    const { env } = getCloudflareContext();
+    return (env as { DB?: D1DatabaseLike }).DB ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function initializeNodeDatabase(db: BetterSqliteDatabaseInstance) {
   db.pragma("journal_mode = WAL");
   db.exec(`
     CREATE TABLE IF NOT EXISTS tenants (
@@ -113,12 +189,28 @@ function initialize(db: Database.Database) {
   seedDatabase(db);
 }
 
-export function getDb() {
-  if (!global.__roomravenDb) {
-    mkdirSync(dataDir, { recursive: true });
-    global.__roomravenDb = new Database(dbPath);
-    initialize(global.__roomravenDb);
+async function getNodeDb() {
+  if (!nodeDbPromise) {
+    nodeDbPromise = (async () => {
+      const { default: BetterSqlite3 } = await import("better-sqlite3");
+      const dbPath =
+        process.env.ROOMRAVEN_DB_PATH ?? path.join(process.cwd(), "data", "roomraven.db");
+      mkdirSync(path.dirname(dbPath), { recursive: true });
+      const db = new BetterSqlite3(dbPath);
+      initializeNodeDatabase(db);
+      return new BetterSqliteDatabase(db);
+    })();
   }
 
-  return global.__roomravenDb;
+  return nodeDbPromise;
+}
+
+export async function getDb() {
+  const db = await getCloudflareDb();
+
+  if (!db) {
+    return getNodeDb();
+  }
+
+  return db;
 }

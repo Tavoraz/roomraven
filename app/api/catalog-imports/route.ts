@@ -17,13 +17,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const tenant = getTenant(parsed.data.tenantId);
+    const tenant = await getTenant(parsed.data.tenantId);
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
     }
 
-    const catalogImport = importCatalog(parsed.data.tenantId, parsed.data.name, parsed.data.mappings);
+    const catalogImport = await importCatalog(parsed.data.tenantId, parsed.data.name, parsed.data.mappings);
 
     return NextResponse.json({ catalogImport });
   } catch {
