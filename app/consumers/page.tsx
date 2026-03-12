@@ -3,6 +3,13 @@ import Link from "next/link";
 
 import { AudienceMenu } from "@/components/audience-menu";
 import { ConsumerPricingCard } from "@/components/consumer-pricing-card";
+import { HomeRotatingValue } from "@/components/home-rotating-value";
+import {
+  buildFaqSchema,
+  buildOrganizationSchema,
+  buildPageMetadata,
+  buildSoftwareApplicationSchema
+} from "@/lib/seo";
 
 const consumerPlannerHref = "/planner?tenantId=roomraven-consumer&audience=consumer&locale=en&roomType=living-room";
 
@@ -51,19 +58,87 @@ const consumerSteps = [
     alt: "A second living room concept for comparison"
   }
 ];
+const consumerHeroValueMessages = [
+  "see a new look in your own room before you buy.",
+  "test bathroom, kitchen, living room, and office ideas with less guesswork.",
+  "compare a few directions and keep the one that feels right.",
+  "feel more confident before spending on products or renovation work."
+];
+const pageTitle = "Free AI Room Planner for Homeowners | RoomRaven";
+const pageDescription =
+  "Upload your room photo, add inspiration, and generate one free AI room concept each day. Try bathroom, kitchen, living room, bedroom, and office ideas before you spend.";
+const pageKeywords = [
+  "free AI room planner",
+  "room visualizer",
+  "bathroom design app",
+  "kitchen inspiration planner",
+  "living room makeover tool",
+  "interior design visualizer"
+];
+const consumerFeatures = [
+  "Upload your own room photo",
+  "Add finishes, furniture, or inspiration references",
+  "Generate one free AI room concept per day",
+  "Save your favorite concepts on this device",
+  "Compare room ideas side by side"
+];
+const consumerFaqEntries = [
+  {
+    question: "How do I try RoomRaven for free?",
+    answer:
+      "Open the free planner, upload a room photo, add inspiration, and RoomRaven will generate one free concept each day on this device."
+  },
+  {
+    question: "What rooms can I plan with RoomRaven?",
+    answer:
+      "People use RoomRaven for bathroom, kitchen, living room, bedroom, and home office ideas. The goal is to test a new look before spending on products or renovation work."
+  },
+  {
+    question: "Do I need design experience to use it?",
+    answer:
+      "No. The workflow is made for homeowners and renovators who want to upload a room, add a few references, and quickly see a more realistic direction."
+  },
+  {
+    question: "Can I compare different room ideas?",
+    answer:
+      "Yes. You can keep your favorite concepts and use RoomRaven's 1v1 comparison flow to narrow them down until one option wins."
+  }
+] as const;
+const consumerStructuredData = [
+  buildOrganizationSchema(),
+  buildSoftwareApplicationSchema({
+    name: "RoomRaven Free",
+    path: "/consumers",
+    description: pageDescription,
+    applicationCategory: "DesignApplication",
+    audienceType: "Homeowners and renovators",
+    featureList: consumerFeatures,
+    offer: {
+      price: "0",
+      priceCurrency: "USD"
+    }
+  }),
+  buildFaqSchema([...consumerFaqEntries])
+];
+
+export const metadata = buildPageMetadata({
+  title: pageTitle,
+  description: pageDescription,
+  path: "/consumers",
+  keywords: pageKeywords
+});
 
 export default function ConsumersPage() {
   return (
     <main className="page-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(consumerStructuredData) }} />
       <AudienceMenu current="consumer" />
 
       <section className="hero-grid consumer-hero-grid">
         <div className="panel home-hero-copy consumer-hero-copy">
           <span className="home-kicker">For consumers</span>
           <h1 className="headline">See your room before you spend money.</h1>
-          <p className="lead consumer-lead">
-            Upload your room, add inspiration, and generate one free concept each day to test ideas with more confidence.
-          </p>
+          <HomeRotatingValue messages={consumerHeroValueMessages} />
           <div className="chip-row">
             <span className="chip active">Free to use</span>
             <span className="chip">1 concept per day</span>
@@ -84,7 +159,6 @@ export default function ConsumersPage() {
         <aside className="panel hero-visual consumer-hero-visual">
           <div className="consumer-hero-collage">
             <article className="consumer-scene-card consumer-scene-card-large">
-              <span className="home-scene-kicker">Your room now</span>
               <div className="home-visual-frame consumer-scene-media">
                 <Image
                   src="/home/CurrentRoom.png"
@@ -95,9 +169,9 @@ export default function ConsumersPage() {
                   priority
                 />
               </div>
+              <span className="home-scene-caption">Your room now</span>
             </article>
             <article className="consumer-scene-card">
-              <span className="home-scene-kicker">Inspiration</span>
               <div className="home-visual-frame consumer-scene-media consumer-scene-media-tall">
                 <Image
                   src="/home/Reference.png"
@@ -108,9 +182,9 @@ export default function ConsumersPage() {
                   priority
                 />
               </div>
+              <span className="home-scene-caption">Inspiration</span>
             </article>
             <article className="consumer-scene-card">
-              <span className="home-scene-kicker">Your concept</span>
               <div className="home-visual-frame consumer-scene-media consumer-scene-media-tall">
                 <Image
                   src="/home/GeneratedConcept.png"
@@ -121,6 +195,7 @@ export default function ConsumersPage() {
                   priority
                 />
               </div>
+              <span className="home-scene-caption">Your concept</span>
             </article>
           </div>
         </aside>
@@ -203,6 +278,25 @@ export default function ConsumersPage() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="panel faq-panel" style={{ marginTop: 18 }}>
+        <div className="planner-section-header faq-section-header">
+          <div className="stack faq-section-copy">
+            <span className="home-kicker">Common questions</span>
+            <h2 className="section-title faq-title">The basics people search for before trying a free room planner.</h2>
+          </div>
+          <span className="small-note faq-note">Clear answers help both search engines and AI assistants describe the product correctly.</span>
+        </div>
+
+        <div className="faq-grid">
+          {consumerFaqEntries.map((entry) => (
+            <details key={entry.question} className="faq-item" name="consumer-faq">
+              <summary className="faq-question">{entry.question}</summary>
+              <p className="small-note faq-answer">{entry.answer}</p>
+            </details>
+          ))}
         </div>
       </section>
     </main>

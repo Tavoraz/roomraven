@@ -6,8 +6,13 @@ import { HomeBrandStudio } from "@/components/home-brand-studio";
 import { HomeRotatingValue } from "@/components/home-rotating-value";
 import { ScrollCta } from "@/components/scroll-cta";
 import { buildPublicDemoHref, getDefaultDemoVariant } from "@/lib/demo-variants";
-
-export const dynamic = "force-dynamic";
+import {
+  buildFaqSchema,
+  buildOrganizationSchema,
+  buildPageMetadata,
+  buildSoftwareApplicationSchema,
+  buildWebsiteSchema
+} from "@/lib/seo";
 
 const roomTypes = [
   {
@@ -90,12 +95,73 @@ const heroValueMessages = [
   "keep shoppers planning on your own website.",
   "make renovation decisions feel easier and safer."
 ];
+const pageTitle = "AI Room Planner for Retailers and Renovation Brands | RoomRaven";
+const pageDescription =
+  "RoomRaven is a white-label AI room planner for retailers, showrooms, and renovation brands. Let shoppers upload a room, add inspiration, compare concepts, and move closer to purchase.";
+const pageKeywords = [
+  "AI room planner",
+  "white-label room planner",
+  "retail room visualizer",
+  "showroom planning software",
+  "bathroom planner for retailers",
+  "kitchen visualizer for brands",
+  "interior design lead generation"
+];
+const enterpriseFeatures = [
+  "Upload a current room photo",
+  "Add product, finish, and inspiration references",
+  "Generate AI room concepts",
+  "Compare saved concepts in a 1v1 flow",
+  "Embed the planner on a branded website"
+];
+const enterpriseFaqEntries = [
+  {
+    question: "What is RoomRaven?",
+    answer:
+      "RoomRaven is a white-label AI room planning app for retailers, showrooms, and renovation brands. Shoppers upload a room photo, add inspiration or product references, and compare concepts before they buy."
+  },
+  {
+    question: "Who is RoomRaven built for?",
+    answer:
+      "It is built for bathroom retailers, kitchen studios, interior showrooms, renovation specialists, and brands that want customers to plan their space on the brand's own website."
+  },
+  {
+    question: "Can RoomRaven be embedded on an existing website?",
+    answer:
+      "Yes. RoomRaven can run as an embedded planner or as a standalone branded experience with custom colors, logo, and product references."
+  },
+  {
+    question: "How does RoomRaven help increase conversions?",
+    answer:
+      "It helps shoppers picture the result before they buy, shortens indecision, and creates higher-intent leads because customers move forward with more confidence."
+  }
+] as const;
+const homeStructuredData = [
+  buildOrganizationSchema(),
+  buildWebsiteSchema(),
+  buildSoftwareApplicationSchema({
+    path: "/",
+    description: pageDescription,
+    applicationCategory: "BusinessApplication",
+    audienceType: "Retailers, showrooms, and renovation brands",
+    featureList: enterpriseFeatures
+  }),
+  buildFaqSchema([...enterpriseFaqEntries])
+];
+
+export const metadata = buildPageMetadata({
+  title: pageTitle,
+  description: pageDescription,
+  path: "/",
+  keywords: pageKeywords
+});
 
 export default function HomePage() {
   const primaryDemoHref = buildPublicDemoHref(getDefaultDemoVariant());
 
   return (
     <main className="page-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }} />
       <AudienceMenu current="enterprise" />
 
       <section className="hero-grid">
@@ -134,7 +200,6 @@ export default function HomePage() {
 
         <aside className="panel hero-visual home-visual-stage">
           <article className="home-scene-card home-scene-current">
-            <span className="home-scene-kicker">Current room</span>
             <HomeVisualFrame
               className="home-scene-media"
               src="/home/CurrentRoom.png"
@@ -142,10 +207,10 @@ export default function HomePage() {
               sizes="(max-width: 960px) 100vw, 32vw"
               priority
             />
+            <span className="home-scene-caption">Current room</span>
           </article>
 
           <article className="home-scene-card home-scene-inspiration">
-            <span className="home-scene-kicker">Inspiration</span>
             <HomeVisualFrame
               className="home-scene-media"
               src="/home/Inspiration.png"
@@ -153,10 +218,10 @@ export default function HomePage() {
               sizes="(max-width: 960px) 100vw, 26vw"
               priority
             />
+            <span className="home-scene-caption">Inspiration</span>
           </article>
 
           <article className="home-scene-card home-scene-generated">
-            <span className="home-scene-kicker">Generated concept</span>
             <HomeVisualFrame
               className="home-scene-media"
               src="/home/GeneratedConcept.png"
@@ -164,10 +229,10 @@ export default function HomePage() {
               sizes="(max-width: 960px) 100vw, 32vw"
               priority
             />
+            <span className="home-scene-caption">Generated concept</span>
           </article>
 
           <article className="home-scene-card home-scene-compare">
-            <span className="home-scene-kicker">1v1 compare</span>
             <HomeComparePreview
               leftSrc="/home/GeneratedConcept.png"
               leftAlt="Generated concept option A"
@@ -176,6 +241,7 @@ export default function HomePage() {
               sizes="(max-width: 960px) 100vw, 24vw"
               priority
             />
+            <span className="home-scene-caption">1v1 compare</span>
           </article>
         </aside>
       </section>
@@ -268,6 +334,25 @@ export default function HomePage() {
           initialPrimaryColor="#d97706"
           initialSecondaryColor="#0f172a"
         />
+      </section>
+
+      <section className="panel faq-panel" style={{ marginTop: 18 }}>
+        <div className="planner-section-header faq-section-header">
+          <div className="stack faq-section-copy">
+            <span className="home-kicker">Common questions</span>
+            <h2 className="section-title faq-title">What buyers, partners, and AI search tools should understand fast.</h2>
+          </div>
+          <span className="small-note faq-note">A short summary of what RoomRaven does, who it is for, and how it fits into a sales journey.</span>
+        </div>
+
+        <div className="faq-grid">
+          {enterpriseFaqEntries.map((entry) => (
+            <details key={entry.question} className="faq-item" name="enterprise-faq">
+              <summary className="faq-question">{entry.question}</summary>
+              <p className="small-note faq-answer">{entry.answer}</p>
+            </details>
+          ))}
+        </div>
       </section>
     </main>
   );
